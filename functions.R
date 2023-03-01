@@ -875,60 +875,61 @@ compare_infercnv <- function(myseus, sample_id){
 
 make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome = "hg38", init_k = 3, gtf = gtf_hg38){
 
+  sample_id = path_file(numbat_dir)
+
   print(numbat_dir)
 
-  for (i in seq(num_iter)){
-    # Plot bulk clones
-    bulk_clones <- read_tsv(glue("{numbat_dir}/bulk_clones_{i}.tsv.gz"), col_types = cols())
+  # for (i in seq(num_iter)){
+  #   # Plot bulk clones
+  #   bulk_clones <- read_tsv(glue("{numbat_dir}/bulk_clones_{i}.tsv.gz"), col_types = cols())
+  #   p = plot_bulks(bulk_clones, min_LLR = min_LLR, use_pos = TRUE,
+  #                  genome = genome) +
+  #     labs(title = sample_id)
+  #   ggsave(glue("{numbat_dir}/bulk_clones_{i}.png"), p,
+  #          width = 13, height = 2 * length(unique(bulk_clones$sample)),
+  #          dpi = 250)
+  #   print(glue("plotted {numbat_dir}/bulk_clones_{i}.png"))
+  #
+  #   # Plot bulk subtrees
+  #   bulk_subtrees <- read_tsv(glue("{numbat_dir}/bulk_subtrees_{i}.tsv.gz"), col_types = cols())
+  #   p = plot_bulks(bulk_subtrees, min_LLR = min_LLR,
+  #                  use_pos = TRUE, genome = genome) +
+  #     labs(title = sample_id)
+  #   ggsave(glue("{numbat_dir}/bulk_subtrees_{i}.png"),
+  #          p, width = 13, height = 2 * length(unique(bulk_subtrees$sample)),
+  #          dpi = 250)
+  # }
+  #
+  #   # # Plot single-cell smoothed expression magnitude heatmap
+  #   gexp_roll_wide <- read_tsv(glue("{numbat_dir}/gexp_roll_wide.tsv.gz"), col_types = cols()) %>%
+  #     column_to_rownames("cell")
+  #   hc <- readRDS(glue("{numbat_dir}/hc.rds"))
+  #   p = plot_exp_roll(gexp_roll_wide = gexp_roll_wide,
+  #                     hc = hc, k = init_k, gtf = gtf, n_sample = 10000)
+  #   labs(title = sample_id)
+  #   ggsave(glue("{numbat_dir}/exp_roll_clust.png"), p,
+  #          width = 8, height = 4, dpi = 200)
+
+    bulk_clones <- read_tsv(glue("{numbat_dir}/bulk_clones_final.tsv.gz"), col_types = cols())
     p = plot_bulks(bulk_clones, min_LLR = min_LLR, use_pos = TRUE,
-                   genome = genome)
-    ggsave(glue("{numbat_dir}/bulk_clones_{i}.png"), p,
-           width = 13, height = 2 * length(unique(bulk_clones$sample)),
-           dpi = 250)
-    print(glue("plotted {numbat_dir}/bulk_clones_{i}.png"))
+                     genome = genome) +
+      labs(title = sample_id)
+    ggsave(glue("{numbat_dir}/bulk_clones_final.png"), p, width = 13,
+             height = 2 * length(unique(bulk_clones$sample)),
+             dpi = 250)
 
-    # Plot bulk subtrees
-    bulk_subtrees <- read_tsv(glue("{numbat_dir}/bulk_subtrees_{i}.tsv.gz"), col_types = cols())
-    p = plot_bulks(bulk_subtrees, min_LLR = min_LLR,
-                   use_pos = TRUE, genome = genome)
-    ggsave(glue("{numbat_dir}/bulk_subtrees_{i}.png"),
-           p, width = 13, height = 2 * length(unique(bulk_subtrees$sample)),
-           dpi = 250)
-  }
-
-    # exp_plot <- plot_exp_roll()
-    # # Plot single-cell smoothed expression magnitude heatmap
-    gexp_roll_wide <- read_tsv(glue("{numbat_dir}/gexp_roll_wide.tsv.gz"), col_types = cols()) %>%
-      column_to_rownames("cell")
-
-    hc <- readRDS(glue("{numbat_dir}/hc.rds"))
-
-    # subtrees = get_nodes_celltree(hc, cutree(hc, k = init_k))
-
-    p = plot_exp_roll(gexp_roll_wide = gexp_roll_wide,
-                      hc = hc, k = init_k, gtf = gtf, n_sample = 10000)
-    ggsave(glue("{numbat_dir}/exp_roll_clust.png"), p,
-           width = 8, height = 4, dpi = 200)
-
-    # Plot a group of pseudobulk HMM profiles
-
-    # consensus_plot <- plot_consensus()
-    # # Plot consensus CNVs
-
-    # mut_history_plot <- plot_mut_history()
-    # # Plot mutational history
-    #
-    # phylo_plot <- plot_phylo_heatmap()
     # # Plot single-cell CNV calls along with the clonal phylogeny
-    #
-    # psbulk_plot <- plot_psbulk()
-    # # Plot a pseudobulk HMM profile
-    #
-    # sc_tree_plot <- plot_sc_tree()
-    # # Plot single-cell smoothed expression magnitude heatmap
-    #
-    # cnv_heatmap_plot <- cnv_heatmap()
-    # # Plot CNV heatmap
+    nb <- readRDS(glue("{numbat_dir}_numbat.rds"))
+    mypal = c('1' = 'gray', '2' = "#377EB8", '3' = "#4DAF4A", '4' = "#984EA3")
+
+    phylo_heatmap <- nb$plot_phylo_heatmap(
+      pal_clone = mypal,
+      show_phylo = TRUE
+    ) +
+      labs(title = sample_id)
+    ggsave(glue("{numbat_dir}/phylo_heatmap.png"), width = 13,
+           height = 10,
+           dpi = 250)
 
     return("success!")
 

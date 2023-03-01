@@ -4,7 +4,10 @@
 .httr-oauth
 .DS_Store
 data/*
-output/*
-output_old/*
+old_output/*
 cache/*
 results/*
+_targets
+.env
+*.Rproj
+
