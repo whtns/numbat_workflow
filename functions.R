@@ -882,7 +882,7 @@ make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome 
   for (i in seq(num_iter)){
 
     bulk_clone_path = glue("{numbat_dir}/bulk_clones_{i}.png")
-    if(!file.exists(bulk_clone_path)){
+    if(!file.exists(bulk_clone_path) | (overwrite = TRUE)){
       # Plot bulk clones
       bulk_clones <- read_tsv(glue("{numbat_dir}/bulk_clones_{i}.tsv.gz"), col_types = cols())
       p = plot_bulks(bulk_clones, min_LLR = min_LLR, use_pos = TRUE,
@@ -897,7 +897,7 @@ make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome 
 
 
     bulk_subtrees_path = glue("{numbat_dir}/bulk_subtrees_{i}.png")
-    if(!file.exists(bulk_subtrees_path)){
+    if(!file.exists(bulk_subtrees_path) | (overwrite = TRUE)){
 
       # Plot bulk subtrees
       bulk_subtrees <- read_tsv(glue("{numbat_dir}/bulk_subtrees_{i}.tsv.gz"), col_types = cols())
@@ -912,24 +912,8 @@ make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome 
 
   }
 
-
-  exp_clust_path = glue("{numbat_dir}/exp_roll_clust.png")
-  if(!file.exists(exp_clust_path)){
-
-    # # Plot single-cell smoothed expression magnitude heatmap
-    gexp_roll_wide <- read_tsv(glue("{numbat_dir}/gexp_roll_wide.tsv.gz"), col_types = cols()) %>%
-      column_to_rownames("cell")
-    hc <- readRDS(glue("{numbat_dir}/hc.rds"))
-    p = plot_exp_roll(gexp_roll_wide = gexp_roll_wide,
-                      hc = hc, k = init_k, gtf = gtf, n_sample = 10000)
-    labs(title = sample_id)
-    ggsave(exp_clust_path, p,
-           width = 8, height = 4, dpi = 200)
-
-  }
-
   final_bulk_clones_path = glue("{numbat_dir}/bulk_clones_final.png")
-  if(!file.exists(final_bulk_clones_path)){
+  if(!file.exists(final_bulk_clones_path) | (overwrite = TRUE)){
 
     bulk_clones <- read_tsv(glue("{numbat_dir}/bulk_clones_final.tsv.gz"), col_types = cols())
     p = plot_bulks(bulk_clones, min_LLR = min_LLR, use_pos = TRUE,
@@ -941,24 +925,39 @@ make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome 
 
   }
 
-  phylo_heatmap_path = glue("{numbat_dir}/phylo_heatmap.png")
+  # exp_clust_path = glue("{numbat_dir}/exp_roll_clust.png")
+  # if(!file.exists(exp_clust_path)){
+  #
+  #   # # Plot single-cell smoothed expression magnitude heatmap
+  #   gexp_roll_wide <- read_tsv(glue("{numbat_dir}/gexp_roll_wide.tsv.gz"), col_types = cols()) %>%
+  #     column_to_rownames("cell")
+  #   hc <- readRDS(glue("{numbat_dir}/hc.rds"))
+  #   p = plot_exp_roll(gexp_roll_wide = gexp_roll_wide,
+  #                     hc = hc, k = init_k, gtf = gtf, n_sample = 10000)
+  #   labs(title = sample_id)
+  #   ggsave(exp_clust_path, p,
+  #          width = 8, height = 4, dpi = 200)
+  #
+  # }
 
-  if(!file.exists(phylo_heatmap_path)){
-
-    # # Plot single-cell CNV calls along with the clonal phylogeny
-    nb <- readRDS(glue("{numbat_dir}_numbat.rds"))
-    mypal = c('1' = 'gray', '2' = "#377EB8", '3' = "#4DAF4A", '4' = "#984EA3")
-
-    phylo_heatmap <- nb$plot_phylo_heatmap(
-      pal_clone = mypal,
-      show_phylo = TRUE
-    ) +
-      labs(title = sample_id)
-    ggsave(phylo_heatmap_path, width = 13,
-           height = 10,
-           dpi = 250)
-
-  }
+  # phylo_heatmap_path = glue("{numbat_dir}/phylo_heatmap.png")
+#
+#   if(!file.exists(phylo_heatmap_path)){
+#
+#     # # Plot single-cell CNV calls along with the clonal phylogeny
+#     nb <- readRDS(glue("{numbat_dir}_numbat.rds"))
+#     mypal = c('1' = 'gray', '2' = "#377EB8", '3' = "#4DAF4A", '4' = "#984EA3")
+#
+#     phylo_heatmap <- nb$plot_phylo_heatmap(
+#       pal_clone = mypal,
+#       show_phylo = TRUE
+#     ) +
+#       labs(title = sample_id)
+#     ggsave(phylo_heatmap_path, width = 13,
+#            height = 10,
+#            dpi = 250)
+#
+#   }
 
 
     return("success!")
