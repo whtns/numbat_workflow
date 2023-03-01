@@ -1,0 +1,16 @@
+benchmarks/*
+cellranger/*
+infercnv/*
+logs/*
+scanpy/*
+seurat/*
+numbat_sridhar/*
+numbat_sridhar_cone/*
+numbat/*.rds
+numbat/*.tsv.gz
+numbat/*/*.tsv.gz
+numbat/*/*.rds
+numbat/*/phasing
+numbat/*/pileup
+
+
