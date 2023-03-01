@@ -1,0 +1,10 @@
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-20_ACTCGCTA-ACTGCATA_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-21_ACTCGCTA-AAGGAGTA_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-22_ACTCGCTA-CTAAGCCT_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-23_ACTCGCTA-CGTCTAAT_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-24_ACTCGCTA-TCTCTCCG_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-25_GGAGCTAC-CTCTCTAT_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-26_GGAGCTAC-TATCCTCT_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-27_GGAGCTAC-GTAAGGAG_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-28_GGAGCTAC-ACTGCATA_L002_R1_merged.fastq.gz
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-29_GGAGCTAC-AAGGAGTA_L002_R1_merged.fastq.gz

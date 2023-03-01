@@ -1,0 +1,159 @@
+---
+title: "ouija_campbell.Rmd"
+author: "Kevin Stachelek"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r , include=FALSE}
+library(stchlk.notes)
+pwd <- getwd()
+stchlk.notes::loadkey(pwd)
+
+library(ouija)
+library(SingleCellExperiment)
+
+```
+
+
+* PT estimation allows temporal info recovery from static profiles
+
+* PT can be used to characterise transient envents in evolving systems
+
+* others emphasize unsupervised tr-wide approach and use retrospective analysis to evaluate hte behaviour of individual genes. 
+
+* Oujia learns pseudotimes from a small set of marker genes. Model these genes in terms of switch-like behavior along a trajectory.
+
+  + genes are ordered along with the cells 
+  + each part of the trajectory understood in terms of certain genes. 
+  
+* Introduce model and demonstrate in many instances a small set of genes can recover pseudotimes that are cons with entire t. 
+
+* Method can detect differences in regulation timings between genes and identify "metastable" states. 
+
+
+oujia take input in two forms:
+* cell by gene matrix of non-negative values. use `log2(TPM + 1)` or `log2(RPKM + 1)` 
+* a `SingleCellExperiment`
+
+
+
+# Vignette
+
+
+```{r}
+data(example_gex)
+example_gex[1:3,]
+```
+
+```{r}
+single_cell_set <- SingleCellExperiment(assays = list(exprs = t(example_gex)))
+```
+
+
+# Response types 
+
+can model genes as either switch or transient  (switch is default)
+
+```{r}
+response_type <- sapply(strsplit(colnames(example_gex), "_"), `[`, 1)
+```
+
+# fitting with ouija 
+
+```{r}
+oui <- ouija(example_gex[sample(seq_len(nrow(example_gex)), 200), ],
+             response_type, iter = 500)
+
+print(oui)
+```
+
+```{r}
+plot_diagnostics(oui)
+```
+
+```{r}
+plot_expression(oui)
+```
+
+```{r}
+plot_switch_times(oui)
+```
+```{r}
+
+plot_peak_times(oui)
+```
+
+# extracting useful quantities
+
+```{r}
+tmap <- map_pseudotime(oui) # MAP pseudotimes
+t0map <- switch_times(oui) # MAP switch times
+pmap <- peak_times(oui) #MAP peak times
+kmap <- switch_strengths(oui) # MAP switch strengths
+```
+
+# determining regulation order of genes
+
+```{r}
+gene_regs <- gene_regulation(oui)
+head(gene_regs)
+```
+
+graph difference in timings 
+
+```{r}
+ggplot(gene_regs, aes(y = label, x = mean_difference, color = significant)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = lower_95, xmax = upper_95)) +
+  xlab("Mean difference in regulation time") +
+  ylab("Gene pair")
+```
+
+# identify metastable states 
+
+* find discrete cell types along continuous pseudotemporal trajectories.
+
+```{r}
+cmo <- consistency_matrix(oui)
+plot_consistency(oui)
+```
+
+```{r}
+cell_classifications <- cluster_consistency(cmo)
+```
+
+```{r}
+map_pst <- map_pseudotime(oui)
+df_class <- data.frame(map_pst, cell_classifications)
+ggplot(df_class, aes(x = map_pst, y = cell_classifications)) +
+  geom_point() +
+  xlab("MAP pseudotime") +
+  ylab("Cell classification")
+```
+
+```{r}
+ggplot(df_class, aes(x = map_pst, fill = factor(cell_classifications))) +
+  geom_density() +
+  theme(legend.position = 'top') +
+  scale_fill_discrete(name = "Cell classification") +
+  xlab("MAP pseudotime")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

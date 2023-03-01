@@ -1,0 +1,206 @@
+---
+title: "phenopath_vignette.Rmd"
+author: "Kevin Stachelek"
+date: "6/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r 1, echo=FALSE}
+
+library(MultiAssayExperiment)
+mae <- readRDS("~/single_cell_tools/tmp/GSE48968-GPL13112.rds")
+
+```
+
+
+```{r 2, echo=FALSE}
+suppressPackageStartupMessages(library(scater))
+cts <- assays(experiments(mae)[["gene"]])[["count_lstpm"]]
+tpms <- assays(experiments(mae)[["gene"]])[["TPM"]]
+phn <- colData(mae)
+
+sce <- SingleCellExperiment::SingleCellExperiment(assays=list(counts = cts), 
+                  colData = phn)
+tpm(sce) <- tpms
+exprs(sce) <- log2(tpm(sce) + 1)
+```
+
+
+```{r 3, echo=FALSE}
+is_lps_pam <- grepl("LPS|PAM", sce$description)
+sce <- sce[, is_lps_pam]
+```
+
+
+```{r 4, echo=FALSE}
+split <- strsplit(as.character(sce$description), "_", fixed = TRUE)
+stimulant <- sapply(split, `[`, 1)
+time <- sapply(split, `[`, 2)
+sce$stimulant <- stimulant
+sce$time <- time
+```
+
+```{r 5, echo=FALSE}
+suppressPackageStartupMessages(library(biomaRt))
+ensembl_gene_ids <- sapply(strsplit(rownames(sce), ".", fixed = TRUE), `[`, 1)
+mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+bm <- getBM(attributes = c("ensembl_gene_id", "mgi_symbol"),
+            filters = "ensembl_gene_id",
+            values = ensembl_gene_ids,
+            mart = mart)
+
+rowData(sce)$mgi_symbol <- rep(NA, nrow(sce))
+
+mm2 <- match(bm$ensembl_gene_id, ensembl_gene_ids)
+rowData(sce)$mgi_symbol[mm2] <- bm$mgi_symbol
+```
+
+```{r 6, echo=FALSE}
+
+sce <- calculateQCMetrics(sce)
+```
+We can plot the total number of genes expressed (total_features) against the total number of counts to each cell:
+
+```{r 7, echo=FALSE}
+
+plotPhenoData(sce, aes(x = total_counts, y = total_features))
+```
+
+We see there are quite a few cells with low counts and features. We’ll remove these via threholds:
+
+```{r 8, echo=FALSE}
+
+sce$to_keep <- sce$total_counts > 5e5 & sce$total_features > 5e3
+
+scater::plotColData(sce, aesth = aes_string(x = "total_counts", y = "total_features", color = "to_keep")) 
+
+```
+
+and subset to the post-qc’d cells:
+
+```{r 9, echo=FALSE}
+
+
+sce_qc <- sce[, sce$to_keep]
+```
+In the original publication (Shalek et al. (2014)) the author identified a subset of “cluster-disrupted” cells that were removed. These were identified as having low Lyz1 expression and high Serpinb6b expression. Let’s have a look at the co-expression of these two:
+
+```{r 10, echo=FALSE}
+
+
+Lyz1_index <- grep("Lyz1", rowData(sce_qc)$mgi_symbol)
+SerpinB6b_index <- grep("SerpinB6b", rowData(sce_qc)$mgi_symbol, ignore.case = TRUE)
+
+Lyz1 <- exprs(sce_qc)[Lyz1_index,]
+Serpinb6b <- exprs(sce_qc)[SerpinB6b_index,]
+
+qplot(Lyz1, Serpinb6b)
+```
+
+Accepting cells with Lyz1 expression greater than 0 and Serpbinb6b expression less than 2.5 seems reasonable. Let’s see how this would look:
+
+```{r 11, echo=FALSE}
+
+Serpinb6b_threshold <- 2.5
+Lyz1_threshold <- 0
+
+to_keep <- Lyz1 > Lyz1_threshold & Serpinb6b < Serpinb6b_threshold
+
+qplot(Lyz1, Serpinb6b, color = to_keep) +
+  geom_vline(xintercept = Lyz1_threshold, linetype = 2) +
+  geom_hline(yintercept = Serpinb6b_threshold, linetype = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(subtitle = "Non-cluster-disrupted: Serpinb6b > 2.5 and Lyz1 > 0")
+```
+
+Let’s now subset the data appropriately:
+
+```{r 12, echo=FALSE}
+
+sce_qc2 <- sce_qc[, to_keep]
+```
+Finally, technical variation can have a large effect on single-cell RNA-seq data. Unfortunately we don’t know the experimental design, but one of the key signs of batch effects is large variation in the number of genes expressed across cells (Hicks et al. (2017)). Let’s see how this affects the principal components of the data:
+
+```{r 13, echo=FALSE}
+
+
+plotQC(sce_qc2, type = 'find', var = 'total_features', ntop = 2e3)
+```
+
+We see this has a huge effect on the overall variation, contributing to the first principal component. We can remove this effect using the handy normaliseExprs function in scater:
+
+```{r 14, echo=FALSE}
+
+
+m <- model.matrix(~ sce_qc2$total_features)
+sce_qc2 <- normaliseExprs(sce_qc2, design = m)
+exprs(sce_qc2) <- norm_exprs(sce_qc2)
+```
+Let’s tidy up all the SCESets we have lying around before we’re ready for the PhenoPath analysis:
+```{r 15, echo=FALSE}
+
+
+sce <- sce_qc2
+rm(sce_qc, sce_qc2)
+print(sce)
+```
+
+4 Covariate-adjusted pseudotime analysis with PhenoPath
+4.1 Preparing the SCESet for input to PhenoPath
+It’s an open question in the field precisely what genes to use in any pseudotime fit. In this work we opt for the most variable genes (in log-expression space, so we don’t have to worry too much about the mean-variance relationship - for a more refined approach, see the variance stabilising transformation that’s part of DESeq2).
+
+Here we’ll create a new SCESet that consists of the 7500 most variable genes:
+
+```{r 16, echo=FALSE}
+
+
+suppressPackageStartupMessages(library(matrixStats))
+gene_vars <- rowVars(exprs(sce))
+var_cutoff <- sort(gene_vars, decreasing = TRUE)[7500]
+sce_hvg <- sce[gene_vars >= var_cutoff, ]
+
+```
+We just have a couple of more things to tidy up before we can fit the model with PhenoPath:
+
+If any MGI symbol is NA, set it to the corresponding ensembl gene ID
+For some reason the gene Rasgefb1 that’s important to our analysis isn’t annotated, so let’s fix that:
+
+```{r 17, echo=FALSE}
+
+is_na_mgi_symbol <- is.na(rowData(sce_hvg)$mgi_symbol)
+rowData(sce_hvg)$mgi_symbol[is_na_mgi_symbol] <- rownames(sce_hvg)[is_na_mgi_symbol]
+
+is_Rasgefb1 <- match("ENSMUSG00000029333.14", rownames(sce_hvg))
+rowData(sce_hvg)$mgi_symbol[is_Rasgefb1] <- "Rasgefb1"
+```
+4.2 Inference with PhenoPath
+First we must decide how to pass in the covariate information (ie the stimulant applied) to the software as the x values. Here we will give cells exposed to LPS a value of 1 and cells exposed to PAM a value of -1. This means the overall pathway loading λ is the average change for LPS and PAM cells, while if the β parameter is positive it means the gene is more upregulated over pseudotime under LPS and if β is negative it means the gene is more upregulated under PAM11 Instead we could encode LPS to 1 and PAM to 0, in which case the pathway loading λ would be the change under PAM and λ+β the change under LPS stimulation..
+
+In R we construct this via
+```{r 18, echo=FALSE}
+
+
+x <- 2 * (sce_hvg$stimulant == "LPS") - 1
+```
+By default PhenoPath initialises to the first principal component of the data. However, variational inference is non-convex and we can easily end up in a local maximum in which pseudotime essentially runs backwards in time. Simply for convenience sake, we’ll initialise the latent space with the first principal component “flipped” so that the pseudotimes will run forwards in time22 Since all pseudotime trajectories are essentially equivalent up to a parity transformation, this won’t affect any of the benchmarking with existing software.:
+
+```{r 19, echo=FALSE}
+
+
+scale_vec <- function(x) (x - mean(x)) / sd(x)
+pc1 <- prcomp(t(exprs(sce_hvg)), scale = TRUE)$x[,1]
+pc1 <- scale_vec(pc1)
+time_numeric <- as.numeric(gsub("h", "", sce$time))
+pc1 <- pc1 * sign(cor(pc1, time_numeric))
+```
+And we’re all set! Model fitting is as easy as a call to the phenopath function:
+```{r 20, echo=FALSE}
+
+
+library(phenopath)
+fit <- phenopath(sce_hvg, x, z_init = pc1)
+```

@@ -1,0 +1,842 @@
+---
+title: "Batch Correct by Mutual Nearest Neighbors"
+author: 
+- "Kevin Stachelek"
+- "Mitali Singh"
+date: "8/22/2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = F, error = F, fig.width=14, fig.height=10)
+```
+
+# load libraries
+
+```{r, message = FALSE, include=F}
+
+# load required libraries -------------------------------------------------
+library(ggplot2)
+library(reshape2)
+library(gtools)
+library(tidyverse)
+library(SingleCellExperiment)
+library(scran)
+library(scater)
+library(org.Hs.eg.db)
+library(plotly)
+library(ggdendro)
+library(dendextend)
+library(glue)
+```
+
+# load functions
+
+```{r}
+
+# load required functions -------------------------------------------------
+
+read_cell_settings <- function(cell_settings, sep = ","){
+  # browser()
+  test <- readLines(cell_settings)
+  
+  vecs <- list()
+  mtnames <- c()
+  for (i in test){
+    if (!grepl("#", i)){
+      lbline = strsplit(i, sep)
+      d = unlist(lbline)[[1]]
+      vecs <- append(vecs, lbline)
+      mtnames <- append(mtnames, d)    
+    }
+    
+  }
+  
+  pfx <- unique(gsub("_.*", "", mtnames[grep("_", mtnames)]))
+  pfx <- paste0(pfx, "_")
+  test <- list()
+  for (i in pfx){
+    test1 <- list(which(startsWith(mtnames, i)))
+    names(test1) = tolower(gsub("_", "", i))
+    test <- append(test, test1)
+  }
+  
+  sub_vecs <- list()
+  vec_names <- list()
+  for (i in test){
+    test_vec <- vecs[i]
+    sub_vecs <- append(sub_vecs, list(test_vec))
+  }
+  
+  # names(sub_vecs) <- vec_names[1:length(sub_vecs)]
+  names(sub_vecs) <- names(test)
+  
+  sub_vecs <- sub_vecs[unlist(lapply(sub_vecs, length) != 0)]
+  
+  param_dfs <- purrr::map2(sub_vecs, names(sub_vecs), match_cols)
+  
+  
+  
+  if (is.list(param_dfs) & length(param_dfs) != 0) {
+    param_dfs <- param_dfs %>%
+      Reduce(function(dtf1,dtf2) dplyr::full_join(dtf1,dtf2,by="sample_id"), .) %>% 
+      dplyr::arrange(sample_id)  
+    
+    dup_cells <- which(duplicated(param_dfs[,1]))
+    if (any(dup_cells)){
+      print(paste0("cells ", paste(param_dfs$sample_id[dup_cells], collapse = " "), " found duplicated in cell sets! They will be removed from analysis"))
+      param_dfs <- param_dfs[-dup_cells,]
+    }
+    
+    rownames(param_dfs) <- param_dfs[,1]
+    
+  }
+  
+
+  
+  return(param_dfs)
+  
+}
+
+
+## parse martin metadata
+find_remove_cells <- function(plot_settings, annotation){
+  # browser()
+  test <- readLines(plot_settings)
+  
+  if (!any(grepl('remove', test))){
+    return(NULL)
+  }
+  
+  vecs <- list()
+  mtnames <- c()
+  for (i in test){
+    if (!grepl("#", i) & grepl('remove', i)){
+      lbline = strsplit(i, "\t")
+      d = unlist(lbline)[[2]]
+      vecs <- append(vecs, lbline)
+      mtnames <- append(mtnames, d)    
+    }
+  }
+  
+  pfx <- tolower(gsub("_.*", "", mtnames))
+  valid_pfx  <- which(pfx %in% colnames(annotation))
+  
+  if (length(valid_pfx) == 0){
+    return(NULL)
+  }
+  
+  pfx <- pfx[valid_pfx]
+  
+  
+  
+  sfx <- gsub(".*_", "", mtnames[valid_pfx])
+  
+  remove_cells <- purrr::map2(pfx, sfx , function(x, y) annotation[annotation[tolower(x)] == y,])
+  
+  
+  
+  remove_cells <- dplyr::bind_rows(remove_cells)
+  
+  ind <- apply(remove_cells, 1, function(x) all(is.na(x)))
+  remove_cells <- remove_cells[ !ind, ]
+  
+  remove_cells <- unique(remove_cells[,1])
+  
+}
+
+
+match_cols <- function(match_vecs, sv_name){
+  out=NULL
+  for (i in match_vecs){
+    vetor <- i
+    vetor <- vetor[vetor != ""]
+    key <- data.frame(sample_id=vetor[-1], sv_name=rep(gsub(".*_","", vetor[[1]]), (length(vetor)-1)))  
+    out <- rbind(out, key)
+  }  
+  colnames(out) <- c("sample_id", sv_name) 
+  return(out)
+}
+
+convert_mt_setting <- function(cell_settings, plot_settings){
+  
+  test <- readLines(cell_settings)
+  
+  vecs <- list()
+  mtnames <- c()
+  for (i in test){
+    if (!grepl("#", i)){
+      lbline = strsplit(i, "\t")
+      d = unlist(lbline)[[1]]
+      vecs <- append(vecs, lbline)
+      mtnames <- append(mtnames, d)    
+    }
+    
+  }
+  
+  pfx <- unique(gsub("_.*", "", mtnames[grep("_", mtnames)]))
+  pfx <- paste0(pfx, "_")
+  test <- list()
+  for (i in pfx){
+    test1 <- list(which(startsWith(mtnames, i)))
+    names(test1) = tolower(gsub("_", "", i))
+    test <- append(test, test1)
+  }
+  
+  sub_vecs <- list()
+  vec_names <- list()
+  for (i in test){
+    test_vec <- vecs[i]
+    sub_vecs <- append(sub_vecs, list(test_vec))
+  }
+  
+  # names(sub_vecs) <- vec_names[1:length(sub_vecs)]
+  names(sub_vecs) <- names(test)
+  
+  sub_vecs <- sub_vecs[unlist(lapply(sub_vecs, length) != 0)]
+  
+  param_dfs <- purrr::map2(sub_vecs, names(sub_vecs), match_cols)
+  
+  
+  
+  if (is.list(param_dfs) & length(param_dfs) != 0) {
+    param_dfs <- param_dfs %>%
+      Reduce(function(dtf1,dtf2) dplyr::full_join(dtf1,dtf2,by="sample_id"), .) %>% 
+      dplyr::arrange(sample_id)  
+    
+    dup_cells <- which(duplicated(param_dfs[,1]))
+    if (any(dup_cells)){
+      print(paste0("cells ", paste(param_dfs$sample_id[dup_cells], collapse = " "), " found duplicated in cell sets! They will be removed from analysis"))
+      param_dfs <- param_dfs[-dup_cells,]
+    }
+    
+    rownames(param_dfs) <- param_dfs[,1]
+    
+  }
+  
+  remove_cells <- find_remove_cells(plot_settings, param_dfs)
+  
+  
+  return(list("annotation" = param_dfs, "removed_cells" = remove_cells))
+  
+}
+
+check_rownames <- function(counts){
+  if(grepl("ENST.*", rownames(counts))){
+    rownames(counts) <- rownames(counts)
+  } else{
+    rownames(counts) <- counts[,1]
+    counts[,1] <- NULL
+  } 
+  return(counts)
+}
+
+data_append_exp_tag <- function(df, exp_tag){
+  names(df) <- paste0(exp_tag, names(df))
+  return(df)
+}
+
+meta_append_exp_tag <- function(df, exp_tag){
+  names(df)[1] <- "sample_id"
+  df <- dplyr::mutate(df, sample_id = paste0(exp_tag, sample_id))
+  return(df)
+}
+
+sce_from_tibbles <- function(counts, census_counts, colData){
+
+	featuredata <- data.frame(counts[,1])
+	rownames(featuredata) <- featuredata[,1]
+	
+	counts <- tibble::column_to_rownames(counts, colnames(counts)[1]) %>% 
+	  as.matrix()
+	
+	census_counts <- tibble::column_to_rownames(census_counts, colnames(census_counts)[1]) %>% 
+	  as.matrix()
+
+	
+	colData <- data.frame(colData)
+	rownames(colData) <- colData[,1]
+	colData <- colData[colnames(counts),]
+	
+	# check that dimensions of counts and census counts are equal and in same order
+	census_counts <- census_counts[rownames(counts),colnames(counts)]
+
+
+	
+	sumexp <- SummarizedExperiment(assays=list(counts=counts, census_counts=census_counts), colData=colData, rowData=featuredata)
+	
+	# filter out cells not in comparison
+	sce <- sce <- as(sumexp, "SingleCellExperiment")
+	
+	return(sce)
+}
+
+prep_counts_and_sample_sheet <- function (diffex_settings, counts, sample_sheet) {
+	# browser()
+	sumexp <- sce_from_tibbles(counts, sample_sheet, diffex_settings)
+	
+	subset_param <- diffex_settings$subset_param
+	subset_vals <- unlist(strsplit(diffex_settings$subset_param_values, ","))
+	
+	# filter out any groups not specified in settings file
+	sumexp <- sumexp[,sumexp[[subset_param]] %in% subset_vals]
+	
+	return(sumexp)
+
+}
+
+prep_batches <- function(sce){
+  # browser()
+
+  sce <- calculateQCMetrics(sce, compact=TRUE)
+  QC <- sce$scater_qc
+  low.lib <- isOutlier(QC$all$log10_total_counts, type="lower", nmad=3)
+  low.genes <- isOutlier(QC$all$log10_total_features_by_counts, type="lower", nmad=3)
+  data.frame(LowLib=sum(low.lib), LowNgenes=sum(low.genes))
+  
+  discard <- low.lib | low.genes 
+  sce <- sce[,!discard]
+  summary(discard)
+  # browser()
+  
+  cluster_compute <- function(sce){
+    clusters <- quickCluster(sce, min.mean=0.1)
+    table(clusters)
+    sce <- computeSumFactors(sce, min.mean=0.1, clusters=clusters)    
+    return(sce)
+  }
+  
+  if(class(try(cluster_compute(sce), silent = TRUE)) == "try-error"){
+    sce <- computeSumFactors(sce, min.mean=0.1)
+  }else{
+    sce <- cluster_compute(sce)
+  }
+
+  summary(sizeFactors(sce))
+  sce <- normalize(sce)
+  
+  fit <- trendVar(sce, parametric=TRUE, use.spikes=FALSE) 
+  dec <- decomposeVar(sce, fit)
+  plot(dec$mean, dec$total, xlab="Mean log-expression", 
+      ylab="Variance of log-expression", pch=16)
+  curve(fit$trend(x), col="dodgerblue", add=TRUE)
+  
+  dec$Symbol <- rowData(sce)$rownames.counts.
+  dec <- dec[order(dec$bio, decreasing=TRUE),]
+  head(dec)
+    
+  return(list(sce, dec))
+}
+  
+run_plotly <- function(msce, format, title, color, color_var = F){
+
+  df <- as.tibble(reducedDim(msce, format), rownames = "cell_id")
+  df <- dplyr::left_join(df, data.frame(colData(msce)), by = c("cell_id" = "Sample_ID"))
+  df[[color]] <- as.factor(df[[color]])
+
+  if (color_var == T){
+    color_var = levels(df[[color]])
+  } else {
+    color_var = c('#BF382A', '#0C4B8E', '#2ab0bf')
+  }
+  
+  p <- plot_ly(df, x = ~df[[2]], y = ~df[[3]], z = ~df[[4]], color = ~df[[color]], colors = color_var, text = ~paste('cell id:', cell_id)) %>%
+    add_markers(size = 1) %>%
+    layout(title = title,
+           scene = list(xaxis = list(title = 'dim 1'),
+                       yaxis = list(title = 'dim 2'),
+                       zaxis = list(title = 'dim 3')))
+  return(p)
+}
+
+mergeSingleCellExperiment <- function(sce1, sce2){
+	# browser()
+	
+	# check that features (genes or transcripts) are idential between sces
+	identical(rownames(sce1), rownames(sce2))
+	
+#	Now we’ll check that there aren’t any repeated cellIDs:
+		
+	sum(colnames(sce1) %in% colnames(sce2))
+	
+#	Everything is ok, so we can go ahead and combine them:
+
+	sample_ids <- c(colnames(sce1), colnames(sce2))
+	merge_cd <- dplyr::bind_rows(data.frame(colData(sce1)), data.frame(colData(sce2)))
+	rownames(merge_cd) <- sample_ids
+	if(!"Sample_ID" %in% colnames(merge_cd)){
+		merge_cd <- cbind(Sample_ID = rownames(merge_cd), merge_cd)
+	}
+	
+	# merge counts
+	merge_counts <- merge(counts(sce1), counts(sce2), by = 0)
+	merge_counts <- tibble::column_to_rownames(merge_counts, colnames(merge_counts)[1]) %>% 
+	  as.matrix()
+	
+	# merge census_counts
+	merge_census_counts <- merge(assay(sce1, "census_counts"), assay(sce2, "census_counts"), by = 0)
+	merge_census_counts <- tibble::column_to_rownames(merge_census_counts, colnames(merge_census_counts)[1]) %>% 
+	  as.matrix()
+	
+	merge_rd <- data.frame(row.names = rownames(merge_counts), "features" = rownames(merge_counts))
+		
+	merge_sce <- SingleCellExperiment(assays=list(counts=merge_counts, census_counts = merge_census_counts), colData=merge_cd, rowData=merge_rd)
+	
+	return(merge_sce)
+}
+
+
+```
+
+
+# load data 
+We create SingleCellExperiment objects for each batch to store the counts and metadata together. This reduces the risk of book-keeping errors in later steps of the analysis.
+
+```{r, include = F}
+
+# load data ------------------------------------------------------
+
+counts_paths <- c("~/single_cell_projects/quicklinks/FACS_20170407_dshayler_H_sapiens_proj/output/stringtie_transcripts_raw_counts.csv",
+	"~/single_cell_projects/quicklinks/FACS_20171031_dshayler_H_sapiens_proj/output/stringtie_transcripts_raw_counts.csv",
+	"~/single_cell_projects/quicklinks/FACS_20181001_dshayler_Organoid_proj/output/transcript_count_matrix_fetal.csv")
+
+census_paths <- c("~/single_cell_projects/quicklinks/FACS_20170407_dshayler_H_sapiens_proj/output/transcripts_tpm_census_matrix.csv",
+                  "~/single_cell_projects/quicklinks/FACS_20171031_dshayler_H_sapiens_proj/output/transcripts_tpm_census_matrix.csv",
+                  "~/single_cell_projects/quicklinks/FACS_20181001_dshayler_Organoid_proj/output/fetal_census_matrix.csv")
+
+GROUP_PATHS <- c("~/single_cell_projects/quicklinks/FACS_20170407_dshayler_H_sapiens_proj/cell_metadata.csv",
+								 "~/single_cell_projects/quicklinks/FACS_20171031_dshayler_H_sapiens_proj/FACS_20171031_dshayler_sample_sheet.csv",
+								 "~/single_cell_projects/quicklinks/FACS_20181001_dshayler_Organoid_proj/10_2018_Seq_3_fetal_cell_metadata.csv")
+
+outdir = "~/single_cell_projects/quicklinks/3_seq_dshayler_proj/output/mnncorrect"
+
+counts <- purrr::map(counts_paths, read_csv)
+census_counts <- purrr:::map(census_paths, read_csv)
+
+colData <- purrr::map(GROUP_PATHS, read_csv)
+
+# read in user supplied cell_settings file
+cell_sets <- read_cell_settings("~/single_cell_projects/quicklinks/2_seq_dshayler_proj/output/2_Seq_3d_ward_Grp_List.csv", ",")
+colnames(cell_sets) <- c("Sample_ID", "color")
+
+
+
+sce_in <- list(counts = counts, census_counts = census_counts, colData = colData)
+sces <- purrr::pmap(sce_in, sce_from_tibbles)
+
+# we exclude "removed cells (as defined by wetlab user)
+ds_removed <- "~/single_cell_tools/dshayler_input/3_Fetal_Seq/removed_cells.txt"
+wetlab_removed <- ds_removed
+wetlab_removed <- readr::read_lines(wetlab_removed)
+
+sces <- lapply(sces, function(x) x[,!colnames(x) %in% wetlab_removed])
+
+names(sces) <- c("batch_1", "batch_2", "batch_3")
+
+subset_sces_by_cell <- function(keep_cells, batch){
+  batch <- lapply(batch, function(x) x[,colnames(x) %in% keep_cells])
+  return(batch)
+}
+
+# sces_clusts <- lapply(cluster_cells, subset_sces_by_cell, sces)
+
+
+```
+
+pick features to use for clustering and ensure that they are shared between all batches
+ 
+```{r, cache = T}
+
+clust = 3
+
+# prepped_batches <- purrr::map(sces, prep_batches)
+# prepped_batches <- purrr::map(sces_clusts[[clust]], prep_batches)
+
+# saved after calculating dec for each count matrix
+# prepped batches path for specific cluster
+# prep_batches_path <- glue::glue("~/tmp/prepped_batches_clust_{clust}.rds")
+
+# prepped batches path for all cells
+prep_batches_path <- "~/single_cell_projects/quicklinks/3_seq_dshayler_proj/tmp/prepped_batches.rds"
+
+# saveRDS(prepped_batches, prep_batches_path)
+prepped_batches <- readRDS(prep_batches_path)
+
+sces <- sapply(prepped_batches, "[", 1)
+
+decs <- sapply(prepped_batches, "[", 2)
+decs_rows <- lapply(decs, rownames)
+
+```
+
+# Feature Selection
+
+## use all features with mean biological variation > 0
+
+```{r feature-selection}
+
+# use all variable features
+
+# intersect_features <- purrr::reduce(decs_rows, intersect)
+# 
+# extract_bio_var <- function(batch, intersect_features){
+#   exbio <- batch[intersect_features, "bio"]
+#   return(exbio)
+# }
+# 
+# exbios <- purrr::map_df(decs, extract_bio_var, intersect_features)
+# 
+# mean.bio <- rowSums(exbios)/length(exbios)
+# chosen <- intersect_features[mean.bio > 0]
+# length(chosen)
+# 
+# sub_sces <- lapply(sces, "[", intersect_features)
+# 
+# sces <- do.call(multiBatchNorm, sub_sces)
+# 
+# sces <- sapply(sces, function(x) x[chosen,])
+
+```
+
+## use top 1000 features
+
+```{r}
+
+# use top 1000 variable features
+
+tops <- lapply(decs_rows, function(x) x[seq_len(1000)] )
+
+chosen <- Reduce(intersect, tops)
+
+# Identifying genes that are annotated in all batches.
+in.all <- Reduce(intersect, decs_rows)
+
+decs_all <- lapply(decs, function(x) x[in.all,])
+
+# Setting weighted=FALSE so each batch contributes equally.
+combined <- do.call(combineVar, c(decs_all, weighted=FALSE))
+
+chosen2 <- rownames(combined)[head(order(combined$bio, decreasing=TRUE), 1000)]
+
+sces <- sapply(sces, function(x) x[chosen2,])
+
+```
+
+
+# Performing MNN-based correction
+run mnncorrect several times for different values of k. results stored in `sces_k` and `clusters_k` and saved to k specific csvs in output dir
+
+```{r}
+
+set.seed(100)
+
+run_fastmnn_k <- function(k, sces, output_dir, cluster="All"){
+
+  mnn.out <- do.call(fastMNN, c(sces, list(k=k, d=50, approximate=TRUE)))
+
+  merge_sce <- purrr::reduce(sces, mergeSingleCellExperiment)
+  merge_sce <- normalize(merge_sce)
+  
+  reducedDim(merge_sce, "MNN") <- mnn.out$corrected
+  merge_sce$Batch <- as.character(mnn.out$batch)
+  
+  snn.gr <- buildSNNGraph(merge_sce, use.dimred="MNN")
+  clusters <- igraph::cluster_walktrap(snn.gr)
+
+  table(clusters$membership, merge_sce$Batch)
+  
+  #extract and save the cluster information 
+  cluster_info <- data.frame(SampleID=colnames(merge_sce), clusters=clusters$membership, stringsAsFactors = F)
+  cluster_path <- glue::glue(output_dir, "cluster_info_k_{k}_cluster_{cluster}.csv")
+  write_csv(cluster_info,cluster_path)
+  return(list(merge_sce, cluster_info))
+}
+
+run_mnncorrect <- function(sces, output_dir, cluster="All"){
+  # browser()
+  
+  # lgcnts <- sapply(sces, function(x) t(logcounts(x)))
+  lgcnts <- sapply(sces, logcounts)
+  
+  mnn.out <- do.call(mnnCorrect, c(lgcnts, list(k=20)))
+  mnn_corr <- purrr::map(mnn.out$corrected, as.data.frame) %>% 
+    dplyr::bind_cols() %>% 
+    identity()
+  
+  colnames(mnn_corr) <- unlist(sapply(lgcnts, colnames))
+  
+  return(mnn_corr)
+}
+
+k_vec <- c(10, 20, 30)
+
+#mnncorrect cluster specific
+# fast_mnn_res <- lapply(k_vec, run_mnncorrect_k, sces, cluster = clust, output_dir = "~/single_cell_projects/quicklinks/3_seq_dshayler_proj/")
+
+# all cells
+fast_mnn_res <- lapply(k_vec, run_fastmnn_k, sces, output_dir = "~/single_cell_projects/quicklinks/3_seq_dshayler_proj/results/")
+
+# mnn_res <- run_mnncorrect(sces, output_dir = "~/single_cell_projects/quicklinks/3_seq_dshayler_proj/results/")
+
+sces_k <- lapply(fast_mnn_res, "[[", 1)
+clusters_k <- lapply(fast_mnn_res, "[[", 2) 
+```
+
+# save cluster output to mt format tsvs
+
+```{r, eval=F}
+# save cluster information in MT format file
+write_vec <- function(vec, vec_name, file = file){
+  cat(vec_name, file = file, append = T, sep = "\t")
+  cat("\t", file = file, append = T, sep = "\t")
+  cat(vec, file = file, append = T, sep = "\t")
+  cat("", file = file, append = T, sep = "\n")
+}
+
+cluster_list <- split(cluster_info, cluster_info$clusters)
+cluster_list <- sapply(cluster_list, function(x) x$SampleID)
+names(cluster_list) <- paste0("cluster_", seq(1,length(cluster_list)))
+
+mt_clusters <- "~/single_cell_tools/dshayler_input/3_Fetal_Seq/three_seq_mnn_clusters.tsv"
+file.remove(mt_clusters)
+purrr::map2(cluster_list, names(cluster_list), write_vec, file = mt_clusters)
+# end mt formatting 
+```
+
+# 5 choose k and append cluster info to k appropriate sce
+
+```{r}
+
+k = 20
+k_index <- which(k_vec == k)
+sce <- sces_k[[k_index]]
+
+cluster_info <- clusters_k[[k_index]]
+
+
+sce$clusters <- cluster_info$clusters
+
+```
+
+# retrieve cell ids from each cluster
+
+```{r, eval=F}
+
+
+cluster_cells <- split(cluster_info, cluster_info$clusters)
+
+cluster_cells <- lapply(cluster_cells, "[[", "SampleID")
+  
+
+```
+
+# create new coloring scheme from cell settings
+
+```{r}
+
+
+## color omitted cells white
+omitted_cells <- colnames(sce[,!colnames(sce) %in% cell_sets$Sample_ID])
+omit_df <- data.frame(row.names = omitted_cells, Sample_ID = omitted_cells, color = "white")
+cs_cols <- rbind(cell_sets, omit_df)
+cs_cols <- tolower(cs_cols[colnames(sce),]$color)
+
+# make valid color names 
+cs_cols <- gsub("lg", "lightgreen", cs_cols)
+
+sce$custom <- cs_cols
+```
+
+
+# run pca and tsne
+
+```{r}
+
+set.seed(100)
+# Using irlba to set up the t-SNE, for speed.
+
+orig_pca_counts <- runPCA(sce, ntop=Inf, method="prcomp", ncomponents = 3)
+orig_pca_census <- runPCA(sce, ntop=Inf, method="prcomp", ncomponents = 3, exprs_values = "census_counts")
+# orig_pca_plot <- plotPCA(orig_pca, colour_by='Batch') + ggtitle('PCA Original')
+# corr_pca <- plotReducedDim(sce, use_dimred = "MNN", colour_by = "Batch") + ggtitle("PCA Corrected")
+
+# plot original tSNE
+orig_tsne <- runTSNE(orig_pca_counts, use_dimred="PCA", ncomponents = 3)
+orig_tsne_plot <- plotTSNE(orig_tsne, colour_by="Batch") + ggtitle("tSNE Original")
+
+# plot corrected by tSNE
+corr_sce <- runTSNE(sce, use_dimred="MNN", ncomponents = 3)
+corr_sce$Cluster <- factor(cluster_info$clusters)
+corr_tsne_cluster <- plotTSNE(corr_sce, colour_by="Cluster") + ggtitle("Cluster")
+corr_tsne_batch <- plotTSNE(corr_sce, colour_by="Batch") + ggtitle("Batch")
+multiplot(corr_tsne_cluster, corr_tsne_batch, cols=2)
+
+```
+
+# run plotly for 3d pcas
+
+```{r}
+
+run_plotly(orig_pca_counts, "PCA", "Raw Counts PCA colored by batch", color="Batch")
+run_plotly(orig_pca_census, "PCA", "Census Counts PCA colored by batch", color="Batch")
+run_plotly(sce, "MNN", "Corrected PCA colored by batch", color = "Batch")
+
+run_plotly(orig_pca_counts, "PCA", "Raw Counts PCA colored by cluster", color="clusters")
+run_plotly(orig_pca_census, "PCA", "Census Counts PCA colored by cluster", color="clusters")
+run_plotly(sce, "MNN", "Corrected PCA colored by cluster", color = "clusters")
+
+run_plotly(orig_pca_counts, "PCA", "Raw Counts PCA colored by custom", color="custom", color_var = T)
+run_plotly(orig_pca_census, "PCA", "Census Counts PCA colored by custom", color="custom", color_var = T)
+run_plotly(sce, "MNN", "Corrected PCA colored by custom", color = "custom", color_var = T)
+
+# run_plotly(osce, "TSNE", "Original tSNE", color="Batch")
+# run_plotly(csce, "TSNE", "Corrected tSNE", color="Batch")
+
+# multiplot(op, cp, cols=2)
+# multiplot(ot, ct, cols=2)
+
+```
+
+# create ggdend function
+
+```{r plot_dendrogram, include = F}
+
+newggplot.ggdend <- function (data, segments = TRUE, labels = TRUE, nodes = TRUE, 
+          horiz = FALSE, theme = theme_dendro(), offset_labels = 0, ...) {
+  data <- prepare.ggdend(data)
+  #angle <- ifelse(horiz, 0, 90)
+  #hjust <- ifelse(horiz, 0, 1)
+  p <- ggplot()
+  if (segments) {
+    p <- p + geom_segment(data = data$segments, aes_string(x = "x", y = "y", xend = "xend", yend = "yend", colour = "col", linetype = "lty", size = "lwd"), lineend = "square") + 
+      guides(linetype = FALSE, col = FALSE) + scale_colour_identity() + 
+      scale_size_identity() + scale_linetype_identity()
+  }
+  if (nodes) {
+    p <- p + geom_point(data = data$nodes, aes_string(x = "x", y = "y", colour = "col", shape = "pch", size = "cex")) + 
+      guides(shape = FALSE, col = FALSE, size = FALSE) + 
+      scale_shape_identity()
+  }
+  if (labels) {
+    data$labels$cex <- 5 * data$labels$cex
+    data$labels$y <- data$labels$y + offset_labels
+    p <- p + geom_text(data = data$labels, aes_string(x = "x", y = "y", label = "label", colour = "col", size = "cex"))#edited
+  }
+  if (horiz) {
+    p <- p + coord_flip() + scale_y_reverse(expand = c(0.2, 0))
+  }
+  if (!is.null(theme)) {
+    p <- p + theme
+  }
+  p
+}
+
+assignInNamespace(x = "ggplot.ggdend", ns = "dendextend", value = newggplot.ggdend)
+
+```
+
+# create dendrograms of ward clusters, batches, and mnn clusters
+
+```{r}
+
+batch_colors <- rainbow(length(unique(sce$Batch)))[as.numeric( as.factor(sce$Batch))]
+names(batch_colors) <- colnames(sce)
+cluster_colors <- rainbow(length(unique(sce$clusters)))[as.numeric( as.factor(sce$clusters))] 
+names(cluster_colors) <- colnames(sce)
+
+make_mnn_dendro <- function(sce, color_vec = NULL, k_cols = NULL, exprs_values = "counts", use_dimred = NULL, method = "ward.D2"){
+  # browser()
+  #dendogram data
+  if(!is.null(use_dimred)){
+    x <- t(reducedDim(sce, use_dimred))  
+  } else {
+    x <- as.matrix(scale(assay(sce, exprs_values)))
+  }
+  
+  dd.row <- x %>% 
+  	t %>% 
+  	dist %>% 
+  	hclust(method = method) %>% 
+  	as.dendrogram
+
+  if (!is.null(k_cols)){
+    dd.row <- set(dd.row, "branches_k_color", k = k_cols)
+  } else if (!is.null(color_vec)) {
+    # reorder color_vec by order of labels in dendro
+    color_vec = color_vec[order(match(names(color_vec),labels(dd.row)))]
+    dd.row <- color_branches(dd.row, col = color_vec)  
+  } 
+  
+  dd.row <- dd.row %>% 
+  	# color_labels(k = 3) %>% 
+  	set("branches_lwd", c(0.4)) %>%
+    set("labels_cex", c(0.5,1)) %>% 
+  	# set("branches_lty", c(1,1,3,1,1,2)) %>%
+  	# set("labels_colors") %>%
+  	set("labels_cex", c(.9)) %>%
+  	set("leaves_pch", 19) %>%
+  	set("leaves_cex", 2) %>%
+  	# set("nodes_col", c("orange", "black", "plum", NA)) %>%
+  	identity()
+  
+  return(dd.row)
+  
+}
+
+plot_mnn_dendro <- function(dendro, title = NULL){
+  gdrow <- as.ggdend(dendro)
+
+  gdr <- ggplot(gdrow) + 
+    ggtitle(title) +
+  	NULL
+  ggplotly(gdr)
+}
+
+# cluster dendro on raw counts
+cluster_dendro_raw <- make_mnn_dendro(sce, k_cols = 3)
+plot_mnn_dendro(cluster_dendro_raw, title = "color by ward clustering on raw counts")
+
+# cluster dendro on census counts
+cluster_dendro_census <- make_mnn_dendro(sce, k_cols = 3, exprs_values = "census_counts")
+plot_mnn_dendro(cluster_dendro_census, title = "color by ward clustering on census counts")
+
+# cluster dendro on mnn
+# cluster_dendro_mnn <- make_mnn_dendro(sce, k_cols = 3, exprs_values = "census_counts", use_dimred = "MNN", method = "ward.D2")
+# plot_mnn_dendro(cluster_dendro_mnn, title = "color by batch on 50 PC MNN")
+
+
+# batch dendro on raw counts
+batch_dendro_raw <- make_mnn_dendro(sce, batch_colors)
+plot_mnn_dendro(batch_dendro_raw, title = "color by batch on raw counts")
+
+# batch dendro on census counts
+batch_dendro_census <- make_mnn_dendro(sce, batch_colors, exprs_values = "census_counts")
+plot_mnn_dendro(batch_dendro_census, title = "color by batch on census counts")
+
+# batch dendro on mnn
+batch_dendro_mnn <- make_mnn_dendro(sce, batch_colors, exprs_values = "census_counts", use_dimred = "MNN", method = "ward.D2")
+plot_mnn_dendro(batch_dendro_mnn, title = "color by batch on 50 PC MNN")
+
+
+# mnn cluster dendro on raw counts
+mnn_clust_dendro_raw <- make_mnn_dendro(sce, cluster_colors)
+plot_mnn_dendro(mnn_clust_dendro_raw, title = "color by mnn cluster on raw counts")
+
+# mnn cluster dendro on census counts
+mnn_clust_dendro_census <- make_mnn_dendro(sce, cluster_colors, exprs_values = "census_counts")
+plot_mnn_dendro(mnn_clust_dendro_census, title = "color by mnn cluster on census counts")
+
+# mnn cluster dendro on mnn
+mnn_clust_dendro_mnn <- make_mnn_dendro(sce, cluster_colors, exprs_values = "census_counts", use_dimred = "MNN", method = "ward.D2")
+plot_mnn_dendro(mnn_clust_dendro_mnn, title = "color by mnn cluster on 50 PC MNN")
+
+
+
+tanglegram(mnn_clust_dendro_raw, mnn_clust_dendro_census, lwd = 1, columns_width = c(5,3,5), main_left = "raw counts colored by mnn", main_right = "census counts colored by mnn")
+
+```
+
+
+

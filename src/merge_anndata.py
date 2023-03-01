@@ -1,0 +1,273 @@
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import scanpy as sc
+import scvi
+from pathlib import Path
+import anndata
+import pandas as pd
+from matplotlib.pyplot import rc_context
+
+study_paths = {"collin" : "/home/skevin/single_cell_projects/resources/collin_et_al_proj/output/scanpy",
+"wu" : "/home/skevin/single_cell_projects/resources/wu_et_al_proj/output/scanpy",
+"field" : "/home/skevin/single_cell_projects/resources/field_et_al_proj/output/scanpy",
+"yang" : "/home/skevin/single_cell_projects/resources/yang_et_al_proj/output/scanpy"}
+
+metadata = dict()
+for i in study_paths:
+  metadata[i] = Path(study_paths[i]).parents[1] / "data" / "metadata.txt"
+  metadata[i] = pd.read_table(metadata[i])
+
+study_adatas = dict()
+for study in study_paths:
+  print(study)
+  study_adatas[study] = list(Path(study_paths[study]).glob("*.h5ad"))
+  
+  sample_ids = [anndata_path.parts[8] for anndata_path in study_adatas[study]]
+  
+  study_adatas[study] = [sc.read_h5ad(adata_path) for adata_path in study_adatas[study]]
+  
+  study_adatas[study] = dict(zip(sample_ids, study_adatas[study]))
+  
+  study_adatas[study] = anndata.concat(study_adatas[study], label="sample_id")
+  
+
+
+merged_study_paths = dict()
+for study in study_paths:
+  merged_study_paths[study] = Path(study_paths[study]) / "merged" / "merged_study.h5ad"
+  print(study)
+  study_adatas[study].write_h5ad(merged_study_path[study])
+
+
+# process merged study adatas by bbknn ------------------------------
+
+def process_study_adata(study_path):
+
+  study_adata = sc.read_h5ad(study_path)
+  
+  processed_study_path = str(study_path).replace(".h5ad", "_processed.h5ad")
+  
+  sc.pp.highly_variable_genes(
+      study_adata,
+      flavor="seurat_v3",
+      n_top_genes=2000,
+      batch_key="sample_id",
+      subset=True
+  )
+  
+  sc.tl.pca(study_adata)
+  
+  sc.external.pp.bbknn(study_adata, batch_key='sample_id') 
+  
+  # sc.pp.pca(study_adata)
+  # sc.pp.neighbors(study_adata)
+  sc.tl.umap(study_adata)
+  sc.tl.leiden(study_adata)
+  
+  print(processed_study_path)
+  study_adata.write_h5ad(processed_study_path)
+
+for study in merged_study_paths:
+  process_study_adata(merged_study_paths[study])
+
+# collin ------------------------------
+
+collin_processed_adata = sc.read_h5ad("/home/skevin/single_cell_projects/resources/collin_et_al_proj/output/scanpy/merged/merged_study_processed.h5ad")
+
+sc.pl.umap(processed_collin_adata, color = ['leiden', 'sample_id'])
+
+sc.tl.leiden(collin_processed_adata, resolution = 0.2)
+sc.pl.umap(collin_processed_adata, color = ['leiden', 'sample_id', 'TOP2A'], save = ".png")
+
+sc.pp.log1p(collin_processed_adata)
+
+sc.tl.leiden(collin_processed_adata, resolution = 0.2)
+sc.pl.umap(collin_processed_adata, color = ['leiden', 'sample_id'], save = ".png")
+
+sc.tl.rank_genes_groups(collin_processed_adata, 'leiden', method='wilcoxon')
+
+# to visualize the results
+sc.pl.rank_genes_groups(collin_processed_adata, n_genes = 10)
+
+sc.pl.umap(collin_processed_adata, color = ['leiden', 'MAP1B', 'KRT13', 'VIM', 'HIST1H4C', 'HBA2'], save = ".png")
+
+# field ------------------------------
+
+field_processed_adata = sc.read_h5ad("/home/skevin/single_cell_projects/resources/field_et_al_proj/output/scanpy/merged/merged_study_processed.h5ad")
+
+sc.pp.log1p(field_processed_adata)
+
+sc.tl.leiden(field_processed_adata, resolution = 0.2)
+sc.pl.umap(field_processed_adata, color = ['leiden', 'sample_id'], save = ".png")
+
+sc.tl.rank_genes_groups(field_processed_adata, 'leiden', method='wilcoxon')
+
+# to visualize the results
+sc.pl.rank_genes_groups(field_processed_adata, n_genes = 10)
+
+sc.pl.umap(field_processed_adata, color = ['leiden', 'GABARAP', 'IGFBP3', 'HIST1H4C', 'S100A11'], save = ".png")
+
+study = "field"
+merged_metada_path = f"~/single_cell_projects/resources/{study}_et_al_proj/output/scanpy/merged/metadata.csv"
+
+field_processed_adata.obs.to_csv(merged_metada_path)
+
+# scvi ------------------------------
+
+# scvi.model.SCVI.setup_anndata(collin_adata, batch_key="sample_id")
+# 
+# vae = scvi.model.SCVI(collin_adata, n_layers=2, n_latent=30, gene_likelihood="nb")
+# 
+# vae.train()
+# 
+# cross_study_adata.obsm["X_scVI"] = vae.get_latent_representation()
+# 
+# sc.pp.neighbors(cross_study_adata, use_rep="X_scVI")
+# sc.tl.leiden(cross_study_adata)
+# 
+# from scvi.model.utils import mde
+# import pymde
+# cross_study_adata.obsm["X_mde"] = mde(cross_study_adata.obsm["X_scVI"])
+# 
+# sc.pl.embedding(
+#     cross_study_adata,
+#     basis="X_mde",
+#     color=["batch", "leiden"],
+#     frameon=False,
+#     ncols=1,
+# )
+
+# yang ------------------------------
+
+yang_processed_adata = sc.read_h5ad("/home/skevin/single_cell_projects/resources/yang_et_al_proj/output/scanpy/merged/merged_study_processed.h5ad")
+
+sc.pl.umap(yang_processed_adata, color = ['leiden', 'sample_id', 'TOP2A'], save = ".png")
+
+marker_genes_dict = {
+  'cone': ['NRL'],
+  'lymph': 'B2M'}
+
+ax = sc.pl.dotplot(yang_processed_adata, marker_genes_dict, groupby='leiden', dendrogram=True,
+                   standard_scale='var', smallest_dot=40, color_map='Blues', figsize=(8,5))
+
+gs = sc.pl.matrixplot(yang_processed_adata, marker_genes_dict, groupby='leiden')
+
+sc.pl.umap(yang_processed_adata, color = ['B2M', 'NRL'], save = ".png")
+
+sc.pp.log1p(yang_processed_adata)
+
+sc.tl.leiden(yang_processed_adata, resolution = 0.2)
+sc.pl.umap(yang_processed_adata, color = ['leiden', 'sample_id'], save = ".png")
+
+sc.tl.rank_genes_groups(yang_processed_adata, 'leiden', method='wilcoxon')
+
+# to visualize the results
+sc.pl.rank_genes_groups(yang_processed_adata, n_genes = 10)
+
+sc.pl.umap(yang_processed_adata, color = ['leiden', 'TFF1', 'MT-CO1', 'LGALS3', 'VIM', 'TOP2A', 'ROM1', 'CD52'], save = ".png")
+
+yang_processed_adata.obs.to_csv("/home/skevin/single_cell_projects/resources/yang_et_al_proj/output/scanpy/merged/metadata.csv")
+
+
+# wu ------------------------------
+
+wu_processed_adata = sc.read_h5ad("/home/skevin/single_cell_projects/resources/wu_et_al_proj/output/scanpy/merged/merged_study_processed.h5ad")
+
+sc.pp.log1p(wu_processed_adata)
+
+sc.tl.leiden(wu_processed_adata, resolution = 0.2)
+sc.pl.umap(wu_processed_adata, color = ['leiden', 'sample_id'], save = ".png")
+
+sc.tl.rank_genes_groups(wu_processed_adata, 'leiden', method='wilcoxon')
+
+# to visualize the results
+
+sc.pl.rank_genes_groups(wu_processed_adata, n_genes = 10)
+
+sc.pl.umap(wu_processed_adata, color = ['leiden', 'RPL6', 'GNAT1', 'HIST1H4C', 'ARL6IP1', 'FTL', 'GUCA1B'], save = ".png")
+
+wu_processed_adata.obs.to_csv("/home/skevin/single_cell_projects/resources/wu_et_al_proj/output/scanpy/merged/metadata.csv")
+
+
+# cross study ------------------------------
+cross_study_adata = anndata.concat(study_adatas, label = "study")
+
+cross_study_adata.raw = cross_study_adata  # keep full dimension safe
+
+# cross_study_adata.write_h5ad("output/scanpy/cross_study_adata.h5ad")
+cross_study_adata = sc.read_h5ad("output/scanpy/cross_study_adata.h5ad")
+
+def integrate_combined_adata(study_path):
+
+  study_adata = sc.read_h5ad(study_path)
+  
+  processed_study_path = str(study_path).replace(".h5ad", "_bbknn_integrated.h5ad")
+  
+  sc.pp.highly_variable_genes(
+      study_adata,
+      flavor="seurat_v3",
+      n_top_genes=2000,
+      batch_key="sample_id",
+      subset=True
+  )
+  
+  sc.tl.pca(study_adata)
+  
+  sc.external.pp.bbknn(study_adata, batch_key='sample_id') 
+  
+  # sc.pp.pca(study_adata)
+  # sc.pp.neighbors(study_adata)
+  sc.tl.umap(study_adata)
+  sc.tl.leiden(study_adata)
+  
+  print(processed_study_path)
+  study_adata.write_h5ad(processed_study_path)
+
+
+integrate_combined_adata("output/scanpy/cross_study_adata.h5ad")
+
+integrated_combined_adata = sc.read_h5ad("output/scanpy/cross_study_adata_bbknn_integrated.h5ad")
+
+sc.pl.umap(integrated_combined_adata, color = ['leiden', 'sample_id', 'study', 'TOP2A', 'NRL', 'RCVRN'], save = ".png")
+
+sc.pl.umap(integrated_combined_adata, color = ['sample_id'], legend_fontsize = "xx-large", save = ".png")
+
+
+# scvi ------------------------------
+scvi.model.SCVI.setup_anndata(cross_study_adata, batch_key="sample_id")
+
+vae = scvi.model.SCVI(cross_study_adata, n_layers=2, n_latent=30, gene_likelihood="nb")
+
+vae.train()
+
+cross_study_adata.obsm["X_scVI"] = vae.get_latent_representation()
+
+sc.pp.neighbors(cross_study_adata, use_rep="X_scVI")
+sc.tl.leiden(cross_study_adata)
+
+from scvi.model.utils import mde
+import pymde
+cross_study_adata.obsm["X_mde"] = mde(cross_study_adata.obsm["X_scVI"])
+
+sc.pl.embedding(
+    cross_study_adata,
+    basis="X_mde",
+    color=["batch", "leiden"],
+    frameon=False,
+    ncols=1,
+)
+# ------------------------------
+
+sc.pp.pca(cross_study_adata)
+sc.pp.neighbors(cross_study_adata)
+sc.tl.umap(cross_study_adata)
+
+sc.pl.umap(cross_study_adata, color=['study', 'TFF1', 'NRL', 'HIST1H4C'], legend_loc = "upper center")
+
+
+cross_study_adata.write_h5ad("output/scanpy/cross_study_adata_processed.h5ad")
+
+sc.tl.pca(cross_study_adata, svd_solver='arpack')
+
+sc.pl.pca(cross_study_adata, dimensions = [(5,6)], color='RXRG')

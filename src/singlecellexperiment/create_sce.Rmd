@@ -1,0 +1,282 @@
+---
+title: "H. Singh Mouse Datasets"
+author: "Mitali Singh"
+output: html_document
+---
+
+```{r, echo = F}
+knitr::opts_chunk$set(echo = F, message = F)
+```
+
+# load required libraries 
+
+```{r}
+library(SingleCellExperiment)
+library(tximport)
+library(tidyverse)
+library(glue)
+library(fs)
+library(rprojroot)
+proj_dir = find_root_file(criterion = ".Rhistory")
+features <- c("gene", "transcript")
+```
+
+# load data and metadata for initial inspection
+
+```{r}
+stringtie_files <- fs::path(proj_dir, "output", "stringtie") %>% 
+  dir_ls(recursive = T) %>%
+  path_filter("*t_data.ctab") %>%
+  identity()
+
+# specify shortened sample names
+sample_names <- paste0("S", path_file(path_dir(stringtie_files)))
+
+# load metadata
+meta_file <- gsub("_proj", "_metadata.csv", path_file(proj_dir))
+meta_file <- fs::path(proj_dir, "data", meta_file)
+
+tpm_meta <- read_csv(meta_file)
+
+expid <- c("hs20160718")
+
+```
+
+```{r}
+
+tmp <- read_tsv(stringtie_files[1])
+tx2gene <- tmp[, c("t_name", "gene_name")]
+
+txi_genes <- tximport(stringtie_files, type = "stringtie", tx2gene = tx2gene, txOut = F, countsFromAbundance = "scaledTPM")
+
+txi_transcripts <- tximport(stringtie_files, type = "stringtie", tx2gene = tx2gene, txOut = T, countsFromAbundance = "scaledTPM")
+
+# sample_names <- stringr::str_extract(basename(dirname(stringtie_files)), "S[0-9]+")
+
+set_colnames_txi <- function(txi, colnames){
+	colnames(txi$counts) <- colnames
+	colnames(txi$abundance) <- colnames
+	colnames(txi$length) <- colnames
+	return(txi)
+}
+
+txi_genes <- set_colnames_txi(txi_genes, sample_names)
+
+txi_transcripts <- set_colnames_txi(txi_transcripts, sample_names)
+
+
+
+```
+
+
+# Load functions
+
+```{r}
+
+append_expids <- function(txi, tpm_meta, expid){
+	
+	
+	tpm_ids <- colnames(txi$counts)
+	meta_ids <- tpm_meta[[1]]
+	
+	# tpm_ids <- str_replace_all(tpm_ids, "[[:alpha:]]", "")
+	# meta_ids <- str_replace_all(meta_ids, "[[:alpha:]]", "")
+	
+	tpm_ids <- as.character(glue::glue("{expid}_{tpm_ids}"))
+	meta_ids <- as.character(glue::glue("{expid}_{meta_ids}"))
+	
+	colnames(txi$counts) <- tpm_ids
+	colnames(txi$abundance) <- tpm_ids
+	colnames(txi$length) <- tpm_ids
+	tpm_meta[,1] <- meta_ids
+	
+	return(list("txi" = txi, "colData" = tpm_meta))
+}
+
+
+#Make SCE from census counts-------------------------------------------
+sce_from_tibbles <- function(exp_list, census_counts=NULL, expids){
+	# browser()
+	txi <- exp_list$txi
+	colData = exp_list$colData
+  
+  featuredata <- data.frame(rownames(txi$counts))
+  rownames(featuredata) <- featuredata[,1]
+  
+  txi$counts <- as.matrix(txi$counts)
+  
+  if (!is.null(census_counts)){
+
+    census_counts <- tibble::column_to_rownames(census_counts, colnames(census_counts)[1]) %>% 
+      as.matrix()
+    
+    # reformat counts and coldata sample names to match names of census_counts
+    all_samples <- str_split_fixed(str = colnames(census_counts), pattern = "_", n = 2)[,2]
+    
+    match_samples <- match(all_samples, colnames(counts))
+    
+    counts <- counts[,match_samples]
+    colnames(counts) <- colnames(census_counts)
+    
+    colData <- data.frame(colData)
+    rownames(colData) <- colData[,1]
+    colData <- colData[colnames(counts),]
+    
+    # all(str_split_fixed(colnames(census_counts), pattern = "_", n=2)[,2] == colnames(new_counts))
+    
+    # subset counts by census to remove features dropped during conversion
+    bioids <- intersect(rownames(counts), rownames(census_counts))
+     counts <- counts[bioids,]
+     census_counts <- census_counts[bioids,]
+     featuredata <- featuredata[rownames(counts),,drop = F]
+     
+  
+    sumexp <- SummarizedExperiment(assays=list(counts=counts, census_counts=census_counts), colData=colData, rowData=featuredata)
+  
+      
+  } else {
+    
+       
+    colData <- data.frame(colData)
+    rownames(colData) <- colData[,1]
+    
+    txi[1:3] <- purrr::map(txi[1:3], ~ .x[,(colnames(.x) %in% rownames(colData))])
+    
+    colData <- colData[colnames(txi$counts),]
+    
+    sumexp <- SummarizedExperiment(assays=list(counts=txi$counts, abundance = txi$abundance, length = txi$length), colData=colData, rowData=featuredata)
+
+    
+  }
+  
+   
+  # filter out cells not in comparison
+  sce <- sce <- as(sumexp, "SingleCellExperiment")
+  
+  return(sce)
+}
+
+append_census_counts <- function(sce, census_counts){
+  
+  sce <- sce[,colnames(census_counts)]
+  
+  counts <- counts(sce)
+  
+  cd <- colData(sce) %>% 
+  	as.data.frame()
+  
+  featuredata <- data.frame(rownames(counts))
+  rownames(featuredata) <- featuredata[,1]
+  
+  # cd <- cd[colnames(census_counts),]
+  
+    # subset counts by census to remove features and samples dropped during conversion
+  bioids <- intersect(rownames(counts), rownames(census_counts))
+  counts <- counts[bioids,]
+  census_counts <- census_counts[bioids,]
+  featuredata <- featuredata[rownames(counts),,drop = F]
+  
+	# 
+  sumexp <- SummarizedExperiment(assays=c(assays(sce), list(census_counts = census_counts)), colData=cd, rowData=featuredata)
+  
+  # filter out cells not in comparison
+  sce <- sce <- as(sumexp, "SingleCellExperiment")
+  
+  return(sce)
+  
+}
+
+prep_batches <- function(sce){
+  # 
+
+  sce <- calculateQCMetrics(sce, compact=TRUE)
+  QC <- sce$scater_qc
+  low.lib <- isOutlier(QC$all$log10_total_counts, type="lower", nmad=3)
+  low.genes <- isOutlier(QC$all$log10_total_features_by_counts, type="lower", nmad=3)
+  data.frame(LowLib=sum(low.lib), LowNgenes=sum(low.genes))
+  
+  discard <- low.lib | low.genes 
+  sce <- sce[,!discard]
+  summary(discard)
+  # 
+  
+  cluster_compute <- function(sce){
+    clusters <- quickCluster(sce, min.mean=0.1)
+    table(clusters)
+    sce <- computeSumFactors(sce, min.mean=0.1, clusters=clusters)    
+    return(sce)
+  }
+  
+  if(class(try(cluster_compute(sce), silent = TRUE)) == "try-error"){
+    sce <- computeSumFactors(sce, min.mean=0.1)
+  }else{
+    sce <- cluster_compute(sce)
+  }
+  
+  sce <- computeSumFactors(sce, min.mean=0.1)
+
+  summary(sizeFactors(sce))
+  sce <- normalize(sce)
+  
+  fit <- trendVar(sce, parametric=TRUE, use.spikes=FALSE) 
+  dec <- decomposeVar(sce, fit)
+  # plot(dec$mean, dec$total, xlab="Mean log-expression", 
+  #     ylab="Variance of log-expression", pch=16)
+  # curve(fit$trend(x), col="dodgerblue", add=TRUE)
+  
+  dec$Symbol <- rowData(sce)$rownames.counts.
+  dec <- dec[order(dec$bio, decreasing=TRUE),]
+  head(dec)
+    
+  return(list("sce" = sce, "dec" = dec))
+}
+
+
+```
+
+```{r}
+
+gene_exp_list <- append_expids(txi_genes, tpm_meta, expid)
+transcript_exp_list <- append_expids(txi_transcripts, tpm_meta, expid)
+
+gene_sce <- sce_from_tibbles(gene_exp_list)
+transcript_sce <- sce_from_tibbles(transcript_exp_list)
+
+```
+
+
+```{r}
+
+feature_sces <- list("gene" = gene_sce, "transcript" = transcript_sce)
+
+# add default batch if missing
+add_default_batch <- function(sce){
+	if (!"batch" %in% colnames(colData(sce))){
+		sce <- scater::mutate(sce, batch = expid)
+	}
+	return(sce)
+}
+
+feature_sces <- lapply(feature_sces, add_default_batch)
+
+```
+
+```{r}
+sce_dir <- fs::path(proj_dir, "output", "sce")
+
+dir_create(sce_dir)
+
+sce_paths <- fs::path(sce_dir, paste0(features, "_sce.rds"))
+
+purrr::map2(feature_sces, sce_paths, saveRDS)
+```
+
+```{r}
+norm_feature_sces <- purrr::map(feature_sces, prep_batches)
+names(norm_feature_sces) <- features
+
+norm_sce_paths <- fs::path(proj_dir, "output", "sce", paste0(features, "_sce_normalized.rds"))
+
+purrr::map2(norm_feature_sces, norm_sce_paths, saveRDS)
+```
+

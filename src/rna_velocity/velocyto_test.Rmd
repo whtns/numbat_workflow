@@ -1,0 +1,384 @@
+---
+title: "velocyto_test.Rmd"
+author: "Kevin Stachelek"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
+```
+
+# load packages
+
+```{r}
+library(tidyverse)
+library(velocyto.R)
+library(Seurat)
+library(rprojroot)
+library(fs)
+library(gsubfn)
+library(reticulate)
+matplotlib <- import("matplotlib", convert = TRUE)
+matplotlib$use("Agg")
+proj_dir = rprojroot::find_root(criterion = has_file_pattern("*.Rproj"))
+```
+
+# load functions
+
+```{r}
+
+set_loom_names <- function(loom_mats, batch){
+	# browser()
+  oldnames <- colnames(loom_mats[[1]])
+  
+  toreplace<-list("MyTissue:" = paste0(batch, "_S"), "_removed_duplicates.bam" = "")
+  newnames <- gsubfn(paste(names(toreplace),collapse="|"),toreplace,oldnames)
+
+	name_loom_mat <- function(loom_mat, newnames){
+		colnames(loom_mat) <- newnames
+		return(loom_mat)
+	}
+	
+	named_loom_mats <- purrr::map(loom_mats, name_loom_mat, newnames)	
+	return(named_loom_mats)
+}
+
+seurat_process_and_reduce <- function(seu) {
+  # we perform standard preprocessing (log-normalization), and identify variable features. Note that Seurat v3 implements an improved method for variable feature selection based on a variance stabilizing transformation ("vst")
+  
+	seu <- NormalizeData(object = seu, verbose = FALSE)
+	seu <- FindVariableFeatures(object = seu, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
+  
+  # Run the standard workflow for visualization and clustering
+  seu <- ScaleData(object = seu, verbose = FALSE)
+  seu <- RunPCA(object = seu, npcs = 30, verbose = FALSE)
+  seu <- RunUMAP(object = seu, reduction = "pca", 
+  																dims = 1:30)
+  seu <- RunTSNE(object = seu, reduction = "pca", dims = 1:30)
+  
+  
+  return(seu)
+}
+
+seurat_cluster <- function(seu, resolution = 0.6, custom_clust = NULL) {
+  # browser()
+  seu <- FindNeighbors(object = seu, dims = 1:10)
+  seu <- FindClusters(object = seu, resolution = resolution)
+  
+  if (length(resolution) > 1){
+    for (i in resolution){
+      seu <- FindClusters(object = seu, resolution = i)
+      seu <- StashIdent(object = seu, save.name = paste0("clusters_", i))
+    }
+  }  
+  
+  if (!is.null(custom_clust)){
+    seu <- StashIdent(object = seu, save.name = "old.ident")
+    clusters <- tibble("Sample_ID" = rownames(seu[[]])) %>% 
+    rownames_to_column("order") %>% 
+    dplyr::left_join(custom_clust, by = "Sample_ID") %>%
+    pull(cluster) %>% 
+    identity()
+    
+    Idents(object = seu) <- clusters
+    # browser()
+
+    return(seu)
+  }
+  
+  return(seu)
+}
+
+save_anno <- function(seu, path){
+	anno_tbl <- as_tibble(seu[[]])
+	write_csv(anno_tbl, path)
+}
+
+```
+
+# load seurat objects
+
+```{r}
+### ASSUMES Seurat object has already been computed -- in this case the object tseu is the result of seurat
+
+### load seurat object
+features = c("gene", "transcript")
+seu_paths <- fs::path(proj_dir, "output", "sce",  paste0(features, "_seu.rds"))
+
+seus <- map(seu_paths, readRDS)
+
+```
+
+```{python}
+import os
+import loompy
+
+loom_path = os.path.join(r.proj_dir, "output", "velocyto", "hs20151130.loom")
+
+ds = loompy.connect(loom_path)
+```
+
+
+```{r, eval = F}
+# IMPORTANT!!! create a loom file using the velocyto command line tools first
+#line 114 cannot run in chunk; use terminal
+
+child_looms <- fs::path("/dataVolume/storage/single_cell_projects/quicklinks", c("C1_20151130_DS_HS_H_sapiens_proj", "3_seq_dshayler_fetal_proj"), "output", "velocyto") %>% 
+  dir_ls() %>% 
+  path_filter("*.loom")
+
+ldats <- purrr::map(child_looms, read.loom.matrices)
+
+```
+
+# Loom File manipulations 
+
+```{r, eval = F}
+
+lfile <- connect(file = child_looms[[2]], mode = "r+")
+lfile
+
+set_loom_file_names <- function(loom_file, batch){
+	browser()
+  oldnames <- loom_file$col.attrs$CellID[]
+  
+  toreplace<-list("MyTissue:" = paste0(batch, "_S"), "_removed_duplicates.bam" = "")
+  newnames <- gsubfn(paste(names(toreplace), collapse="|"), toreplace, oldnames)
+  
+  loom_file$col.attrs$CellID[] <- newnames
+	
+}
+
+oldids <- lfile$col.attrs$CellID[]
+
+set_loom_file_names(lfile, "shl20171031")
+
+lfile$close_all()
+```
+
+```{python, eval = F}
+import os 
+import loompy
+
+output_loom = os.path.join(r.proj_dir, "output", "velocyto", "4_seq_dshayler_fetal_HS.loom")
+
+loompy.combine(r.child_looms, output_loom)
+
+```
+
+```{r}
+# IMPORTANT!!! create a loom file using the velocyto command line tools first
+#line 114 cannot run in chunk; use terminal
+
+loom_path <- fs::path(proj_dir, "output", "velocyto", "4_seq_dshayler_fetal_HS.loom") %>% 
+  identity()
+
+ldat <- read.loom.matrices(loom_path)
+```
+
+```{r}
+gseu <- seus[[1]]
+
+# subset ldat by seurat object.size
+ldat <- purrr::map(ldat, ~.x[,colnames(.x) %in% colnames(gseu)])
+
+# subset seurat object by ldat
+gseu <- gseu[,colnames(gseu) %in% colnames(ldat[[1]])]
+
+```
+
+```{r}
+
+p <- DimPlot(gseu, reduction = "umap")
+col_vec <- unique(ggplot_build(p)$data[[1]]) %>% 
+  arrange(group) %>% 
+  pull(colour) %>% 
+  unique()
+
+DimPlot(gseu, reduction = "umap")
+DimPlot(gseu, reduction = "umap", cols = col_vec)
+# DimPlot(gseu, reduction = "umap", cols = col_vec)
+```
+
+```{r}
+# cell.colors <- Idents(gseu)
+cell.colors <- as_tibble(gseu[["clusters_2"]], rownames = "cellid")
+cell.colors <- tibble::deframe(cell.colors)
+
+# levels(cell.colors) <- as.character(as.numeric(levels(cell.colors)) + 1)
+levels(cell.colors) <- col_vec
+emb <- Embeddings(gseu, "tsne")
+```
+
+
+# Gene filtering
+
+Spliced expression magnitude distribution across genes:
+
+```{r}
+
+plot_spliced_mag <- function(ldat) {
+  hist(log10(rowSums(ldat$spliced)+1),col='wheat',xlab='log10[ number of reads + 1]',main='number of reads per gene')
+}
+
+pdf(fs::path(proj_dir, "output", "velocyto", "reads_per_gene.pdf"))
+plot_spliced_mag(ldat)
+dev.off()
+```
+
+Set up expression matrices, filtering genes to leave those that exceed some pre-defined g to the average expression magnitude
+
+```{r}
+# exonic read (spliced) expression matrix
+emat <- ldat$spliced;
+# intronic read (unspliced) expression matrix
+nmat <- ldat$unspliced
+# spanning read (intron+exon) expression matrix
+smat <- ldat$spanning;
+# filter expression matrices based on some minimum max-cluster averages
+emat <- filter.genes.by.cluster.expression(emat,cell.colors,min.max.cluster.average = 5)
+nmat <- filter.genes.by.cluster.expression(nmat,cell.colors,min.max.cluster.average = 1)
+smat <- filter.genes.by.cluster.expression(smat,cell.colors,min.max.cluster.average = 0.5)
+# look at the resulting gene set
+length(intersect(rownames(emat),rownames(nmat)))
+```
+
+
+```{r}
+# and if we use spanning reads (smat)
+length(intersect(intersect(rownames(emat),rownames(nmat)),rownames(smat)))
+```
+
+# Several variants of velocity estimates using gene-relative model
+
+```{r}
+out_vel_f <- gsub("_proj", "", basename(proj_dir))
+
+out_vel_f <- paste(out_vel_f, "fetal", sep = "_")
+
+```
+
+We’ll start with what is perhaps the most robust estimate, that combines cell kNN pooling with the gamma fit based on an extreme quantiles:
+
+Using min/max quantile fit, in which case gene-specific offsets do not require spanning read (smat) fit. Here the fit is based on the top/bottom 5% of cells (by spliced expression magnitude).
+
+```{r}
+fit.quantile <- 0.05;
+rvel.qf <- gene.relative.velocity.estimates(emat,nmat,deltaT=1,kCells = 5,fit.quantile = fit.quantile)
+rvel.qf_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel_qf.rds"))
+saveRDS(rvel.qf, rvel.qf_path)
+```
+
+```{r}
+fit.quantile <- 0.05;
+rvel.qf_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel_qf.rds"))
+rvel.qf <- readRDS(rvel.qf_path)
+```
+
+
+We visualize the velocities by projecting observed and extrapolated cells onto the first 5 PCs:
+
+
+
+```{r}
+pdf(gsub(".rds", ".pdf", rvel.qf_path))
+pca_plot <- pca.velocity.plot(rvel.qf,nPcs=5,plot.cols=2,cell.colors=ac(cell.colors,alpha=0.7),cex=1.2,pcount=0.1,pc.multipliers=c(1,-1,-1,-1,-1))
+dev.off()
+```
+
+Fitting of individual genes can be visualized using “show.gene” option. To save time, we’ll pass previously-calculated velocity (rvel.qf) to save calculation time:
+
+```{r}
+# define custom pallet for expression magnitude
+pdf(fs::path(proj_dir, "output", "velocyto", "gene_relative_velocity_estimates.pdf"))
+gene.relative.velocity.estimates(emat, nmat, kCells = 5, fit.quantile = fit.quantile, old.fit=rvel.qf, show.gene='RXRG',cell.emb=emb, cell.colors=cell.colors)
+dev.off()
+```
+
+Alternatively, we can use spanning reads (smat) to fit the gene offsets. This will result in more accurate offset estimates, but for much fewer genes (spanning reads are rare). Note that here we also use optional diagona.quantiles setting to estimate extreme quantiles on a normalized sum of splcied and unspliced signal:
+
+```{r}
+rvel <- gene.relative.velocity.estimates(emat,nmat,smat=smat, kCells = 5, fit.quantile=fit.quantile, diagonal.quantiles = TRUE)
+rvel_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel.rds"))
+saveRDS(rvel, rvel_path)
+```
+
+```{r}
+rvel_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel.rds"))
+rvel <- readRDS(rvel_path)
+```
+
+We can visualize the velocity in PCA space:
+
+```{r}
+pdf(gsub(".rds", ".pdf", rvel_path))
+pca.velocity.plot(rvel, nPcs=5, plot.cols=2, cell.colors=ac(cell.colors,alpha=0.7), cex=1.2, pcount=0.1, pc.multipliers=c(1,-1,1,1,1))
+dev.off()
+```
+
+Here we calculate the most basic version of velocity estimates, using relative gamma fit, without cell kNN smoothing (i.e. actual single-cell velocity):
+
+```{r}
+rvel1 <- gene.relative.velocity.estimates(emat,nmat,deltaT=1,deltaT2 = 1,kCells = 1, fit.quantile=fit.quantile)
+
+rvel1_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel1.rds"))
+saveRDS(rvel1, rvel1_path)
+```
+
+```{r}
+rvel1_path <- path(proj_dir, "output", "velocyto", paste0(out_vel_f, "_rvel1.rds"))
+rvel1 <- readRDS(rvel1_path)
+```
+
+```{r}
+pdf(gsub(".rds", ".pdf", rvel1_path))
+pca.velocity.plot(rvel1, nPcs=5, plot.cols=2, cell.colors=ac(cell.colors, alpha=0.7), cex=1.2, pcount=0.1, pc.multipliers=c(1,-1,1,1,1))
+dev.off()
+```
+
+
+# Visualization on an existing embedding
+
+Here we use tsne embedding from the seurat object.
+
+```{r}
+vel_choice <- rlang::expr(rvel.qf)
+
+vel <- rlang::eval_bare(vel_choice)
+
+arrow.scale=9; cell.alpha=0.4; cell.cex=1; fig.height=4; fig.width=4.5;
+
+pdf(fs::path(proj_dir, "output", "velocyto", paste0(vel_choice, "_velocity_arrows", "_on_", "tsne", ".pdf")))
+show.velocity.on.embedding.cor(emb, vel, n=100, scale='sqrt', cell.colors=ac(cell.colors, alpha=cell.alpha), cex=cell.cex, arrow.scale=arrow.scale, arrow.lwd=1)
+dev.off()
+
+#Alternatively, the same function can be used to calculate a velocity vector field:
+
+pdf(fs::path(proj_dir, "output", "velocyto", paste0(vel_choice, "_velocity_grid", "_on_", "tsne", ".pdf")))
+show.velocity.on.embedding.cor(emb, vel, n=100, scale='sqrt', cell.colors=ac(cell.colors,alpha=cell.alpha), cex=cell.cex, arrow.scale=arrow.scale, show.grid.flow=TRUE, min.grid.cell.mass=0.5, grid.n=20, arrow.lwd=2)
+```
+
+# Cell trajectory modeling
+
+A similar function can be used to model central trajectories by directed diffusion on embedding. The main parameters are set up by sigma (which limits the range of how far a cell can jump in terms of distance) and n (how many nearest neighbors are being considered for jumps). The results are sensitive to these parameters, as we don’t have a good way of assessing how much the directional velocity component should compare with random Brownian motion of a cell with the manifold. For instance, relaxing (increasing) sigma, in particular will eventually lead to sympathoblast cells “jumping” the gap into the into the chromaffin differentiation part.
+
+Warning: this simulation takes some time (e.g. a couple of minutes on 40 cores).
+
+```{r, eval = F}
+
+x <- show.velocity.on.embedding.eu(emb, rvel.qf, n=40, scale='sqrt', cell.colors=ac(cell.colors,alpha=cell.alpha), cex=cell.cex, nPcs=30, sigma=2.5, show.trajectories=TRUE, diffusion.steps=400, n.trajectory.clusters=15, ntop.trajectories=1, embedding.knn=T, control.for.neighborhood.density=TRUE, n.cores=7) 
+
+
+```
+
+```{r, eval = F}
+pdf_path <- path(proj_dir, "results", "velocyto", "diffusion_map.pdf")
+pdf(pdf_path)
+x2 <- show.velocity.on.embedding.eu(emb, rvel, n=40, scale='sqrt', cell.colors=ac(cell.colors,alpha=cell.alpha), cex=cell.cex, nPcs=30, sigma=2.5, show.trajectories=TRUE, diffusion.steps=400, n.trajectory.clusters=15, ntop.trajectories=1, embedding.knn=T, control.for.neighborhood.density=TRUE, n.cores=7, cc = x$cc) 
+dev.off()
+```
+
+
+

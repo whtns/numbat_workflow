@@ -1,0 +1,7 @@
+    output: /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR13884240/outs/possorted_genome_bam.bam, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR13884240/outs/filtered_feature_bc_matrix/barcodes.tsv.gz, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR13884240/outs/filtered_feature_bc_matrix/matrix.mtx.gz
+    output: /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800536/outs/possorted_genome_bam.bam, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800536/outs/filtered_feature_bc_matrix/barcodes.tsv.gz, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800536/outs/filtered_feature_bc_matrix/matrix.mtx.gz
+    output: /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800539/outs/possorted_genome_bam.bam, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800539/outs/filtered_feature_bc_matrix/barcodes.tsv.gz, /dataVolume/storage/single_cell_projects/resources/external_rb_scrnaseq_proj/output/cellranger/SRR14800539/outs
+    SRR14800541
+    SRR13884240
+    SRR14800536
+    SRR14800539

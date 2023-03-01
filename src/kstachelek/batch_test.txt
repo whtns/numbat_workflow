@@ -1,0 +1,1 @@
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-8_GCTCATGA-TCTCTCCG_L002_R1_merged.fastq.gz

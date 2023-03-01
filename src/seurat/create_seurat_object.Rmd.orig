@@ -1,0 +1,103 @@
+---
+title: "R Notebook"
+author: "Kevin Stachelek"
+output: html_notebook
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
+```
+
+```{r}
+library('tidyverse')
+library('fs')
+library('rprojroot')
+library(seuratTools)
+proj_dir = rprojroot::find_root(criterion = has_file_pattern("*.Rproj"))
+```
+
+```{r}
+txi_genes <- seuratTools::load_counts_from_stringtie(proj_dir, txOut = F)
+txi_transcripts <- seuratTools::load_counts_from_stringtie(proj_dir, txOut = T)
+```
+
+```{r}
+tpm_meta <- seuratTools::load_meta(proj_dir) %>% 
+	select(-excluded_because) %>% 
+	identity()
+
+```
+
+```{r}
+# load exclusion criteria
+
+excl_crit_files <- path("~/single_cell_projects/quicklinks/FACS_20181001_dshayler_H_sapiens_fetal_proj/", "bin") %>% 
+	dir_ls() %>% 
+	path_filter("*.csv") %>% 
+	set_names("replicates", "nonPRcells")
+
+excl_crit <- map(excl_crit_files, read_csv)
+
+replicates <- excl_crit$replicates[[1]]
+replicates <- tolower(replicates)
+
+nonPRs <- excl_crit$nonPRcells[[1]]
+
+excluded_cells <- enframe(c(replicates = replicates, nonPRs = nonPRs), "excluded_because", "Sample_ID") %>% 
+	mutate(excluded_because = gsub("\\d", "", excluded_because)) 
+
+```
+
+```{r}
+
+tpm_meta <- left_join(tpm_meta, excluded_cells, by = "Sample_ID") %>% 
+	mutate(excluded_because = case_when(is.na(excluded_because) ~ "keep",
+																		TRUE ~ as.character(excluded_because))) %>% 
+	identity()
+
+meta_file <- gsub("_proj", "_metadata.csv", path_file(proj_dir))
+    meta_file <- fs::path(proj_dir, "data", meta_file)
+
+write_csv(tpm_meta, meta_file)
+
+```
+
+```{r}
+<<<<<<< HEAD
+purrr::imap(feature_seus, save_seurat)
+```
+
+=======
+tpm_meta <- seuratTools::load_meta(proj_dir) %>%
+	identity()
+
+```
+
+
+```{r}
+
+feature_seus <- map(list(gene = txi_genes, transcript = txi_transcripts), seu_from_tibbles, tpm_meta)
+
+```
+
+
+```{r}
+purrr::imap(feature_seus, save_seurat)
+```
+
+```{r}
+feature_seus <- map(feature_seus, ~ subset(.x, subset = excluded_because == "keep"))
+```
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+
+```{r}
+feature_seus_thresh <- map(feature_seus, filter_low_rc_cells)
+```
+
+
+
+```{r}
+purrr::imap(feature_seus_thresh, save_seurat, suffix = "thresh")
+```
+
+

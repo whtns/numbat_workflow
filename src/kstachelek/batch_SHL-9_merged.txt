@@ -1,0 +1,1 @@
+data/sc_RB_devel/GT_20171101_SHL_H_sapiens/SHL-9_ATCTCAGG-CTCTCTAT_L002_R1_merged.fastq.gz

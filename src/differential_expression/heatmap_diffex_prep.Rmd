@@ -1,0 +1,265 @@
+---
+title: "shiny_heatmaply.Rmd"
+author: "Kevin Stachelek"
+date: "12/27/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-lib}
+library(shiny)
+library(annotables)
+library(scater)
+library(scran)
+library(tidyverse)
+library(edgeR)
+```
+
+```{r load-func}
+
+run_edger_qlf <- function(sce, full_model, min.count = 1, min.total.count = 2, feature = "transcript"){
+  # browser()
+  full_model <- gsub("~", "", full_model)
+  print(paste0("fitting model for comparison ", full_model))
+
+  dgelist <- scran::convertTo(sce, type = "edgeR")
+  
+  group <- colData(sce)[[full_model]]
+  design <- model.matrix(~ 0 + group)
+  
+  dgelist <- edgeR::calcNormFactors(dgelist)
+
+  dgelist <- estimateDisp(dgelist, design, robust=TRUE)
+
+  fit <- glmQLFit(dgelist, design, robust=TRUE)
+  qlf <- glmQLFTest(fit, coef=1:ncol(design))
+
+  plotBCV(dgelist)
+
+  top <- topTags(qlf, n=1000, adjust.method="BH", sort.by="PValue")
+
+  FDR_thresh <- 1.0
+  top$table <- top$table[top$table$FDR < FDR_thresh,]
+  print(paste0("FDR cutoff equals ", FDR_thresh))
+
+  return(top$table)
+
+}
+
+
+pull_top_var <- function(df, var, top_n){
+  # browser()
+  var <- enquo(var)
+  df <- as_tibble(df) %>% 
+    rownames_to_column(var = "feature") %>% 
+    dplyr::arrange(desc(!!var)) %>% 
+    dplyr::pull(feature)
+  
+  df <- df[1:top_n]
+  return(df)
+}
+
+prep_batches <- function(sce){
+  browser()
+
+  sce <- calculateQCMetrics(sce, compact=TRUE)
+  QC <- sce$scater_qc
+  low.lib <- isOutlier(QC$all$log10_total_counts, type="lower", nmad=3)
+  low.genes <- isOutlier(QC$all$log10_total_features_by_counts, type="lower", nmad=3)
+  data.frame(LowLib=sum(low.lib), LowNgenes=sum(low.genes))
+  
+  discard <- low.lib | low.genes 
+  sce <- sce[,!discard]
+  summary(discard)
+  # browser()
+  
+  cluster_compute <- function(sce){
+    clusters <- quickCluster(sce, min.mean=0.1)
+    table(clusters)
+    sce <- scran::computeSumFactors(sce, min.mean=0.1, clusters=clusters)    
+    return(sce)
+  }
+  
+  if(class(try(cluster_compute(sce), silent = TRUE)) == "try-error"){
+    sce <- scran::computeSumFactors(sce, min.mean=0.1)
+  }else{
+    sce <- cluster_compute(sce)
+  }
+  
+  sce <- scran::computeSumFactors(sce, min.mean=0.1)
+
+  summary(sizeFactors(sce))
+  sce <- normalize(sce)
+  
+  fit <- scran::trendVar(sce, parametric=TRUE, use.spikes=FALSE) 
+  dec <- scran::decomposeVar(sce, fit)
+  plot(dec$mean, dec$total, xlab="Mean log-expression", 
+      ylab="Variance of log-expression", pch=16)
+  curve(fit$trend(x), col="dodgerblue", add=TRUE)
+  
+  dec$Symbol <- rowData(sce)$rownames.counts.
+  dec <- dec[order(dec$bio, decreasing=TRUE),]
+  head(dec)
+    
+  return(list(sce, dec))
+}
+
+safe_mutate <- function(sce, cd, newvar){
+	test3 <- scater::mutate(sce, !!sym(newvar) := cd[[newvar]])	
+	return(test3)
+}
+
+convert_cell_to_df <- function(cell_set, cell_set_name){
+  # browser()
+  
+		superset_name <- stringr::str_split_fixed(cell_set_name, pattern = "_", n=2)[,1]
+		cell_set_name <- stringr::str_split_fixed(cell_set_name, pattern = "_", n=2)[,2]
+		
+		cells2 <- tibble("Sample_ID" = cell_set) %>%
+			dplyr::mutate(!!sym(superset_name) := cell_set_name)
+		return(cells2)
+}
+
+```
+
+
+```{r load-data}
+sce0 <- readRDS("../tmp/sce.rds")
+
+```
+
+```{r}
+
+stringtie_files <- list.files("~/single_cell_projects/quicklinks/RD_20180109_SHL_H_sapiens_RB_31_proj/output/stringtie/", pattern = "t_data.ctab", recursive = T, full.names = T)
+tmp <- read_tsv(stringtie_files[1])
+tx2gene <- tmp[, c("t_name", "gene_name")]
+
+
+# sce2 <- scater::readTxResults(stringtie_files, type = "stringtie", tx2gene = tx2gene, txOut = F, full_length = TRUE)
+
+txi <- tximport(stringtie_files, type = "stringtie", tx2gene = tx2gene, txOut = F)
+
+
+tpm_meta_paths <- c("~/single_cell_projects/quicklinks/RD_20180109_SHL_H_sapiens_RB_31_proj/RD_Seq_sample_info_20180109.csv")
+
+
+tpm_metas <- purrr::map(tpm_meta_paths, readr::read_csv)
+
+sce3 <- SingleCellExperiment(assays=list(counts=txi$counts, colData = tpm_metas[[1]], featureData = data.frame(row.names = rownames(txi$counts), txi$counts)))
+																				 
+																				 
+
+
+```
+
+
+```{r read-pts}
+pts <- list.files("~/single_cell_projects/quicklinks/FACS_20171031_sunlee_H_sapiens_proj/results/pt_files_heatmap/", full.names = T)
+
+pts0 <- lapply(pts, read_tsv, col_names = c("Sample_ID", "ptime"))
+names(pts0) <- gsub(".csv", "", basename(pts))
+
+# reorder pseudotimes on macro scale
+dev_order <- c("Early_cluster_1_2", "cluster_345_PT1", "cluster_334455_PT2")
+pts0 <- pts0[dev_order]
+names(pts0) <- c("cluster_1_2", "cluster_345_PT1", "cluster_334455_PT2")
+
+pull_cells_in_order <- function(ptime_df){
+	ptime_df <- dplyr::arrange(ptime_df, ptime) %>% 
+		dplyr::pull(Sample_ID)
+}
+
+cell_order <- purrr::map(pts0, pull_cells_in_order)
+
+```
+
+```{r mutate-sce}
+
+sce0 <- sce[,unlist(cell_order)]
+
+cluster_df <- purrr::map2(cell_order, names(cell_order), convert_cell_to_df) %>% 
+  dplyr::bind_rows()
+
+cd <- colData(sce0) %>% 
+  as_tibble()
+
+newcd <- dplyr::inner_join(cd, cluster_df, by = "Sample_ID")
+
+sce0 <- safe_mutate(sce0, newcd, "cluster")
+
+```
+
+
+```{r}
+prep_batch_path <- "../tmp/prepped_batch.rds"
+
+prepped_batch <- prep_batches(sce3)
+prepped_batch <- prep_batches(sce0)
+saveRDS(prepped_batch, prep_batch_path)
+
+prepped_batch <- readRDS(prep_batch_path)
+
+
+sce <- prepped_batch[[1]]
+dec <- prepped_batch[[2]]
+
+```
+
+```{r run-edger, eval = F}
+
+# run edger qlftest
+full_model <- "seq_type"
+full_model <- gsub("~", "", full_model)
+print(paste0("fitting model for comparison ", full_model))
+
+dgelist <- scran::convertTo(sce, type = "edgeR")
+
+group <- colData(sce)[[full_model]]
+design <- model.matrix(~ group)
+
+dgelist <- edgeR::calcNormFactors(dgelist)
+
+dgelist <- edgeR::estimateDisp(dgelist, design, robust=TRUE)
+
+fit <- edgeR::glmQLFit(dgelist, design, robust=TRUE)
+
+# qlf_PT1 <- glmQLFTest(fit, contrast=c(-1,0,1))
+# qlf_PT2 <- glmQLFTest(fit, contrast=c(-1,1,0))
+# qlf_branches <- glmQLFTest(fit, contrast=c(0,-1,1))
+qlf_all <- edgeR::glmQLFTest(fit, coef=2)
+
+edgeR::plotBCV(dgelist)
+
+saveRDS(qlf_all, "../tmp/qlf_all.rds")
+
+```
+
+```{r}
+
+qlf_all <- readRDS("../tmp/qlf_all.rds")
+
+pull_top_table <- function(sce, qlf, top_n){
+  top <- topTags(qlf, n=top_n, adjust.method="BH", sort.by="PValue")
+  sce <- sce[rownames(top$table),]
+  heatmap_in <- logcounts(sce) %>% 
+    as.data.frame()
+  
+  write.table(heatmap_in, "../results/heatmap_in.csv")
+  return(heatmap_in)
+
+}
+
+top <- topTags(qlf_all, n=500, adjust.method="BH", sort.by="PValue")
+
+# pull_top_table(sce, qlf_PT1)
+# pull_top_table(sce, qlf_PT2)
+# pull_top_table(sce, qlf_branches)
+top_features <- pull_top_table(sce, qlf_all, 500)
+
+
+```
+
+

@@ -1,0 +1,188 @@
+---
+title: "R Notebook"
+author: "Kevin Stachelek"
+output: html_notebook
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
+```
+
+
+
+```{r}
+library('tidyverse')
+library('fs')
+library('rprojroot')
+library(plotly)
+proj_dir = rprojroot::find_root(criterion = has_file_pattern("*.Rproj"))
+features = c("gene", "transcript")
+```
+
+## collate hisat2 qc from all 4 experiments
+
+<<<<<<< HEAD
+```{r}
+=======
+```{r, eval = F}
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+projs <- c("FACS_20170407_dshayler_H_sapiens_proj", "FACS_20171031_dshayler_H_sapiens_proj", "FACS_20181001_dshayler_H_sapiens_fetal_proj", "C1_20151130_HS_H_sapiens_proj")
+
+hisat2_qc_paths <- path("~/single_cell_projects/quicklinks/", projs, "output", "multiqc_data", "multiqc_hisat2.txt") %>% 
+  set_names(projs)
+
+hisat2_qcs <- map(hisat2_qc_paths, read_tsv)
+
+hisat2_qcs <- map(hisat2_qcs, ~mutate(.x, Sample = gsub(".his.*", "", Sample)))
+
+hisat2_qcs[[2]] <- hisat2_qcs[[2]] %>% 
+  mutate(sample_number = gsub(".*_S", "", Sample)) %>% 
+  mutate(Sample = str_pad(sample_number, max(nchar(sample_number)), pad = "0")) 
+<<<<<<< HEAD
+
+hisat2_qcs[[3]] <- hisat2_qcs[[3]] %>% 
+  mutate(sample_number = gsub(".*_S", "", Sample)) %>% 
+  mutate(Sample = str_pad(sample_number, max(nchar(sample_number)), pad = "0"))
+
+# correct lane specific alignments in 2018 data
+hisat2_qcs[[3]] <- dplyr::mutate(hisat2_qcs[[3]], Sample = str_extract(Sample, "^[:digit:]+")) %>% 
+  group_by(Sample) %>% 
+  select(-sample_number) %>% 
+  dplyr::summarise_all(.funs = sum) %>%
+  identity()
+
+expids <- c("ds20170407_S", "ds20171031_S", "ds20181001_S", "hs20151130_S")
+=======
+
+hisat2_qcs[[3]] <- hisat2_qcs[[3]] %>% 
+  mutate(sample_number = gsub(".*_S", "", Sample)) %>% 
+  mutate(Sample = str_pad(sample_number, max(nchar(sample_number)), pad = "0"))
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+
+# # correct lane specific alignments in 2018 data
+hisat2_qcs[[3]] <- dplyr::mutate(hisat2_qcs[[3]], Sample = str_extract(Sample, "^[:digit:]+")) %>%
+  select(-sample_number) %>% 
+	group_by(Sample) %>%
+  dplyr::summarise_all(.funs = sum)
+
+expids <- c("ds20170404_S", "ds20171031_S", "ds20181001_S", "hs20151130_S")
+# 
+hisat2_qcs <- map2(hisat2_qcs, expids, ~dplyr::mutate(.x, Sample = paste0(.y, Sample)))
+
+aggregate_qc <- dplyr::bind_rows(hisat2_qcs)
+
+write_csv(aggregate_qc, "~/single_cell_projects/quicklinks/4_seq_dshayler_w_organoid_HS_proj/results/aggregate_qc.csv")
+```
+
+<<<<<<< HEAD
+## load unfiltered seurat objects
+
+```{r}
+unfiltered_feature_seus_paths <- path(proj_dir, "output", "sce", paste0(features, "_seu.rds"))
+
+unfiltered_seus <- map(unfiltered_feature_seus_paths, readRDS)
+
+seu_cells <- map(unfiltered_seus, colnames)
+=======
+```{r}
+aggregate_qc <- read_csv("~/single_cell_projects/quicklinks/4_seq_dshayler_w_organoid_HS_proj/results/aggregate_qc.csv") 
+
+```
+
+```{r}
+proj_dirs <- c("~/single_cell_projects/quicklinks/FACS_20170407_dshayler_H_sapiens_proj/",
+                "~/single_cell_projects/quicklinks/FACS_20171031_dshayler_H_sapiens_proj/",
+               "~/single_cell_projects/quicklinks/FACS_20181001_dshayler_H_sapiens_fetal_proj/",
+               "~/single_cell_projects/quicklinks/C1_20151130_HS_H_sapiens_proj/")
+```
+
+
+```{r}
+seu_files <- map(proj_dirs, seuratTools::pull_gene_trx_seus) 
+names(seu_files) <- gsub("_proj", "", basename(proj_dirs))
+
+seu_files <- purrr::transpose(seu_files)
+
+seu_files <- purrr::map(seu_files, ~map(.x, readRDS))
+
+pull_seu_samples <- as_mapper(~ unlist(sapply(.x, colnames)))
+
+seu_samples <- map(seu_files, pull_seu_samples)
+
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+```
+
+
+## clean hisat2 qc 
+
+```{r}
+align_cols <- c("overall_alignment_rate", "paired_aligned_none", "paired_aligned_discord_one", "paired_total", "paired_aligned_multi", "paired_aligned_one")
+
+agg_qc_wo_na <- aggregate_qc %>% 
+	# select(which(colMeans(is.na(.)) < 0.05)) %>%
+  group_by(Sample) %>% 
+  dplyr::arrange(desc(paired_total)) %>% 
+  select(-overall_alignment_rate) %>% 
+  tidyr::gather("align_type", "count", one_of(align_cols)) %>% 
+<<<<<<< HEAD
+  arrange(Sample, desc(align_type)) %>% 
+  filter(Sample %in% seu_cells[[1]]) %>% 
+=======
+	filter(align_type == "paired_total") %>% 
+	filter(Sample %in% seu_samples[[1]]) %>%
+  arrange(Sample, align_type) %>% 
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+  identity()
+
+```
+
+# load filtered seurat obects
+
+```{r}
+feature_seus_ps <- path(proj_dir, "output", "sce", paste0(features, "_seu_thresh.rds")) 
+
+feature_seus <- map(feature_seus_ps, readRDS)
+```
+
+```{r}
+qc_samples <- dplyr::filter(agg_qc_wo_na, align_type == "paired_total") %>%
+  pull(Sample)
+
+<<<<<<< HEAD
+thresholded_cells <- qc_samples[!qc_samples %in% colnames(feature_seus[[1]])]
+=======
+qc_cells <- agg_qc_wo_na$Sample
+
+thresholded_cells <- qc_cells[!qc_cells %in% colnames(feature_seus[[1]])]
+>>>>>>> 3038601368b60283bbdd358abbe831f6ee60afbd
+```
+
+
+## plot hisat2 results
+
+```{r}
+p <- ggplot(agg_qc_wo_na, aes(x=reorder(Sample, -count), y = count, fill = align_type)) +
+    scale_y_continuous(breaks = seq(0, 6e6, by = 2.5e5)) +
+    geom_bar(position = "identity", stat = "identity") + 
+    geom_text(data=subset(agg_qc_wo_na, Sample %in% thresholded_cells & align_type == "paired_total"),
+      aes(Sample, count, label=Sample)) +
+  NULL
+
+ggsave("~/single_cell_projects/quicklinks/4_seq_dshayler_w_organoid_HS_proj/results/aggregate_qc.pdf", p)
+
+ggplotly(p)
+
+```
+
+## find low read count cells
+
+```{r}
+agg_qc_wide <- tidyr::spread(agg_qc_wo_na, align_type, count)
+
+low_read_count_cells <- dplyr::filter(agg_qc_wide, paired_total > 1e4) %>% 
+  tidyr::gather("align_type", "count", one_of(align_cols)) %>%
+  identity()
+  
+```
+
+
