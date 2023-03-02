@@ -15,7 +15,6 @@ numbat_sridhar/*.rds
 numbat_sridhar/*.tsv.gz
 numbat_sridhar/*/*.tsv.gz
 numbat_sridhar/*/*.tsv
-numbat_sridhar/*/*.txt
 numbat_sridhar/*/*.rds
 numbat_sridhar/*/phasing
 numbat_sridhar/*/pileup

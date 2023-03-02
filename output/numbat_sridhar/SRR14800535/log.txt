@@ -1,0 +1,33 @@
+INFO [2023-02-27 06:10:03] Numbat version: 1.2.2
+Running under parameters:
+t = 1e-05
+alpha = 1e-04
+gamma = 20
+min_cells = 10
+init_k = 3
+max_cost = 1644.3
+n_cut = 0
+max_iter = 2
+max_nni = 100
+min_depth = 0
+use_loh = auto
+multi_allelic = FALSE
+min_LLR = 2
+min_overlap = 0.45
+max_entropy = 0.5
+skip_nj = FALSE
+diploid_chroms = 
+ncores = 6
+ncores_nni = 6
+common_diploid = TRUE
+tau = 0.3
+check_convergence = FALSE
+plot = TRUE
+genome = hg38
+Input metrics:
+5481 cells
+INFO [2023-02-27 06:10:03] Mem used: 1.24Gb
+INFO [2023-02-27 06:10:10] Approximating initial clusters using smoothed expression ..
+INFO [2023-02-27 06:10:11] Mem used: 1.24Gb
+INFO [2023-02-27 06:20:35] running hclust...
+INFO [2023-02-27 06:24:48] Expression only run done!
