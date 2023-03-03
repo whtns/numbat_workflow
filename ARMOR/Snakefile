@@ -120,8 +120,10 @@ def numbat_output(wildcards):
   input.extend(expand(outputdir + "numbat/{sample}_allele_counts.tsv.gz", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  input.extend(expand(outputdir + "numbat_sridhar/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  input.extend(expand(outputdir + "numbat_sridhar/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "numbat_sridhar/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "numbat_sridhar/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   return input
@@ -1031,7 +1033,7 @@ rule seurat:
 # 		script = "scripts/process_numbat_rds.R"
 # 	shell:
 # 		'''{Rbin} CMD BATCH --no-restore --no-save "--args numbat_dir='{input.numbat_dir}'" {params.script} {log}'''
-		
+
 rule numbat_sridhar:
 	input:
 		allele_table = outputdir + "numbat/{sample}_allele_counts.tsv.gz",
@@ -1077,7 +1079,53 @@ rule numbat_sridhar_rds:
 		script = "scripts/process_numbat_rds.R"
 	shell:
 		'''{Rbin} CMD BATCH --no-restore --no-save "--args numbat_dir='{input.numbat_dir}'" {params.script} {log}'''
-		
+
+rule numbat_sridhar_mini:
+	input:
+		allele_table = outputdir + "numbat/{sample}_allele_counts.tsv.gz",
+		matrix_file = outputdir + "cellranger/{sample}/outs/filtered_feature_bc_matrix/matrix.mtx.gz",
+		seu_path = outputdir + "seurat/{sample}_seu.rds"
+	output:
+		done_file = outputdir + "numbat_sridhar_mini/{sample}/done.txt"
+	log:
+		outputdir + "logs/numbat_sridhar_mini_{sample}.log"
+	benchmark:
+		outputdir + "benchmarks/numbat_sridhar_mini_{sample}.txt"
+	threads:
+		config["ncores"]
+	params:
+	  # num_clones = lambda wildcards: table_samples[table_samples.Run == wildcards.sample]["num_clone"][0],
+	  num_clones = 3,
+		numbatdir = outputdir + "numbat_sridhar_mini/",
+		max_entropy = config["max_entropy"],
+		min_LLR = config["min_LLR"],
+		max_iter = config["max_iter"],
+		read_prop = config["read_prop"],
+		tau = config["tau"],
+		numbat_t = config["numbat_t"],
+		cell_ceiling = 3000,
+		prof= outputdir + "numbat_sridhar_mini/{sample}/log.prof",
+		ref_path = config["sridhar_ref_path"],
+		script = "scripts/run_numbat.R"
+	shell:
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' ref_path='{params.ref_path}' tau='{params.tau}' init_k='{params.num_clones}' read_prop='{params.read_prop}' max_iter='{params.max_iter}' min_LLR='{params.min_LLR}' t='{params.numbat_t}' cell_ceiling='{params.cell_ceiling}' max_entropy='{params.max_entropy}' allele_df='{input.allele_table}' matrix_file='{input.matrix_file}' out_dir='{params.numbatdir}/{wildcards.sample}' ncores='{threads}' rprof_out='{params.prof}'" {params.script} {log}'''
+
+rule numbat_sridhar_mini_rds:
+	input:
+		numbat_dir = outputdir + "numbat_sridhar_mini/{sample}"
+	output:
+		outputdir + "numbat_sridhar_mini/{sample}_numbat.rds"
+	log:
+		outputdir + "logs/numbat_sridhar_mini_rds_{sample}.log"
+	benchmark:
+		outputdir + "benchmarks/numbat_sridhar_mini_rds_{sample}.txt"
+	threads:
+		config["ncores"]
+	params:
+		script = "scripts/process_numbat_rds.R"
+	shell:
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args numbat_dir='{input.numbat_dir}'" {params.script} {log}'''
+
 rule numbat_sridhar_cone:
 	input:
 		allele_table = outputdir + "numbat/{sample}_allele_counts.tsv.gz",

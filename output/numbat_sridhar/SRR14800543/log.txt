@@ -1,4 +1,4 @@
-INFO [2023-02-27 00:47:08] Numbat version: 1.2.2
+INFO [2023-03-02 13:34:07] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
@@ -26,8 +26,17 @@ plot = TRUE
 genome = hg38
 Input metrics:
 9942 cells
-INFO [2023-02-27 00:47:09] Mem used: 2.03Gb
-INFO [2023-02-27 00:47:19] Approximating initial clusters using smoothed expression ..
-INFO [2023-02-27 00:47:20] Mem used: 2.03Gb
-INFO [2023-02-27 01:28:16] running hclust...
-INFO [2023-02-27 01:36:25] Expression only run done!
+INFO [2023-03-02 13:34:07] Mem used: 2.03Gb
+INFO [2023-03-02 13:34:18] Approximating initial clusters using smoothed expression ..
+INFO [2023-03-02 13:34:18] Mem used: 2.03Gb
+INFO [2023-03-02 14:15:13] running hclust...
+INFO [2023-03-02 14:25:21] Iteration 1
+INFO [2023-03-02 14:25:22] Mem used: 12.4Gb
+INFO [2023-03-02 14:25:39] Running HMMs on 5 cell groups..
+INFO [2023-03-02 14:25:53] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,14a,15a,16a,18a,19a,20a,21a,22a
+INFO [2023-03-02 14:26:51] Expression noise level: medium (0.67). 
+INFO [2023-03-02 14:27:39] Running HMMs on 3 cell groups..
+INFO [2023-03-02 14:27:50] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,14a,15a,16a,18a,19a,20a,21a,22a
+INFO [2023-03-02 14:28:32] Evaluating CNV per cell ..
+INFO [2023-03-02 14:28:33] Mem used: 5.67Gb
+INFO [2023-03-02 14:28:38] Excluding clonal LOH regions .. 

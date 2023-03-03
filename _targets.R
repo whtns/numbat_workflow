@@ -67,7 +67,7 @@ tar_plan(
     "SRR13884245" = "SRR13884245_numbat.rds",
     "SRR13884247" = "SRR13884247_numbat.rds",
     "SRR13884249" = "SRR13884249_numbat.rds"
-  ), ~ paste0("output/numbat/", .x)))),
+  ), ~ paste0("output/numbat_sridhar/", .x)))),
   tar_target(yang_seus, unlist(map(list(
     "SRR14800534" = "SRR14800534_infercnv_numbat_seu.rds",
     "SRR14800537" = "SRR14800537_infercnv_numbat_seu.rds",

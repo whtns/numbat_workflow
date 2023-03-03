@@ -1,0 +1,9 @@
+*.rds
+*.tsv.gz
+*/*.tsv.gz
+*/*.tsv
+*/*.rds
+*/phasing
+*/pileup
+
+
