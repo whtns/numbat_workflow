@@ -58,7 +58,7 @@ fldSD: 25
 ## names: the sample identifiers = the names of the FASTQ files (excluding the _R1/R2.fastq.gz part)
 ## type: either SE or PE, indicating whether the sample was analyzed
 ## via single-end or paired-end sequencing.
-metacsv: ../data/metadata.csv
+metatsv: ../data/metadata.tsv
 
 ## Variables used for model fitting
 ## design: design formula for use with edgeR, camera and DRIMSeq. Must be a string

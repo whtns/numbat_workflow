@@ -9,7 +9,7 @@ if len(config) == 0:
     sys.exit("Make sure there is a config.yaml file in " + os.getcwd() + " or specify one with the --configfile commandline parameter.")
 
 ## Make sure that all expected variables from the config file are in the config dictionary
-configvars = ['annotation', 'organism', 'build', 'release', 'txome', 'genome', 'gtf', 'salmonindex', 'salmonk', 'STARindex', 'HISAT2index', 'readlength', 'fldMean', 'fldSD', 'metacsv', 'design', 'contrast', 'genesets', 'ncores', 'FASTQ', 'fqext1', 'fqext2', 'fqsuffix', 'output', 'useCondaR', 'Rbin', 'run_trimming', 'run_STAR', 'run_HISAT2', 'run_DRIMSeq', 'run_camera']
+configvars = ['annotation', 'organism', 'build', 'release', 'txome', 'genome', 'gtf', 'salmonindex', 'salmonk', 'STARindex', 'HISAT2index', 'readlength', 'fldMean', 'fldSD', 'metatsv', 'design', 'contrast', 'genesets', 'ncores', 'FASTQ', 'fqext1', 'fqext2', 'fqsuffix', 'output', 'useCondaR', 'Rbin', 'run_trimming', 'run_STAR', 'run_HISAT2', 'run_DRIMSeq', 'run_camera']
 for k in configvars:
 	if k not in config:
 		config[k] = None
@@ -26,11 +26,11 @@ config['genome'] = sanitizefile(config['genome'])
 config['STARindex'] = sanitizefile(config['STARindex'])
 config['HISAT2index'] = sanitizefile(config['HISAT2index'])
 config['salmonindex'] = sanitizefile(config['salmonindex'])
-config['metacsv'] = sanitizefile(config['metacsv'])
+config['metatsv'] = sanitizefile(config['metatsv'])
 
 # ## Read metadata
-if not os.path.isfile(config["metacsv"]):
-  sys.exit("Metadata file " + config["metacsv"] + " does not exist.")
+if not os.path.isfile(config["metatsv"]):
+  sys.exit("Metadata file " + config["metatsv"] + " does not exist.")
 
 from pathlib import Path
 from pandas_path import path
@@ -43,10 +43,10 @@ samples['name'] = samples['lane'].str.replace("_S1_L00.*", "", regex = True)
 
 samples['type'] = config['read_type']
 
-table_samples = pd.read_csv(config["metacsv"])
+table_samples = pd.read_csv(config["metatsv"], sep = "\t")
 
 # if not set(['names','type']).issubset(samples.columns):
-#   sys.exit("Make sure 'names' and 'type' are columns in " + config["metacsv"])
+#   sys.exit("Make sure 'names' and 'type' are columns in " + config["metatsv"])
 
 
 ## Sanitize provided input and output directories
@@ -123,7 +123,7 @@ def numbat_output(wildcards):
   # input.extend(expand(outputdir + "numbat_sridhar/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  # input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   return input
@@ -586,7 +586,7 @@ rule dexseq:
 
 rule kallisto_batch:
   input:
-    metacsv = config["metacsv"]
+    metatsv = config["metatsv"]
   output:
     outputdir + "kallisto/smart-seq_batch.txt"
 	log:
@@ -597,7 +597,7 @@ rule kallisto_batch:
 		config["ncores"]
 	run:
 		# make batch
-		# samples = pd.read_csv(config["metacsv"])
+		# samples = pd.read_csv(config["metatsv"], sep = "\t")
 		batch_table = samples[['names', 'type']]
 		batch_table = batch_table.assign(R1="../data/FASTQ/"+batch_table['names']+"_R1.fastq.gz", R2="../data/FASTQ/"+batch_table['names']+"_R2.fastq.gz")
 		batch_table = batch_table.drop(['type'], axis=1)
@@ -852,7 +852,7 @@ rule tximeta:
 	input:
 	  outputdir + "Rout/pkginstall_state.txt",
 		expand(outputdir + "salmon/{sample}/quant.sf", sample = samples.name.values.tolist()),
-		metacsv = config["metacsv"],
+		metatsv = config["metatsv"],
 		salmonidx = config["salmonindex"] + "/hash.bin",
 		json = config["salmonindex"] + ".json",
 		script = "scripts/run_tximeta.R"
@@ -869,7 +869,7 @@ rule tximeta:
 	conda:
 		Renv
 	shell:
-		'''{Rbin} CMD BATCH --no-restore --no-save "--args salmondir='{params.salmondir}' json='{input.json}' metafile='{input.metacsv}' outrds='{output}' annotation='{params.flag}' organism='{params.organism}'" {input.script} {log}'''
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args salmondir='{params.salmondir}' json='{input.json}' metafile='{input.metatsv}' outrds='{output}' annotation='{params.flag}' organism='{params.organism}'" {input.script} {log}'''
 
 ## rna velocity
 rule velocyto:
@@ -1048,7 +1048,6 @@ rule numbat_sridhar:
 	threads:
 		config["ncores"]
 	params:
-	  # num_clones = lambda wildcards: table_samples[table_samples.Run == wildcards.sample]["num_clone"][0],
 	  num_clones = 3,
 		numbatdir = outputdir + "numbat_sridhar/",
 		max_entropy = config["max_entropy"],
@@ -1094,8 +1093,8 @@ rule numbat_sridhar_mini:
 	threads:
 		config["ncores"]
 	params:
-	  # num_clones = lambda wildcards: table_samples[table_samples.Run == wildcards.sample]["num_clone"][0],
-	  num_clones = 3,
+	  num_clones = lambda wildcards: table_samples[table_samples.Run == wildcards.sample].num_clone.values[0],
+	  # num_clones = 3,
 		numbatdir = outputdir + "numbat_sridhar_mini/",
 		max_entropy = config["max_entropy"],
 		min_LLR = config["min_LLR"],
@@ -1257,7 +1256,7 @@ rule checkinputs:
         genome = config["genome"],
         txome = config["txome"],
         fastqdir = config["FASTQ"],
-        metacsv = config["metacsv"],
+        metatsv = config["metatsv"],
         design = config["design"].replace(" ", "") if config["design"] is not None else "NOTDEFINED",
         contrast = config["contrast"].replace(" ", "") if config["contrast"] is not None else "NOTDEFINED",
         annotation = config["annotation"].replace(" ", "") if config["annotation"] is not None else "NOTDEFINED",
@@ -1270,7 +1269,7 @@ rule checkinputs:
     conda:
 	    Renv
     shell:
-        '''{Rbin} CMD BATCH --no-restore --no-save "--args metafile='{params.metacsv}' design='{params.design}' contrast='{params.contrast}' outFile='{output}' gtf='{params.gtf}' genome='{params.genome}' fastqdir='{params.fastqdir}' fqsuffix='{params.fqsuffix}' fqext1='{params.fqext1}' fqext2='{params.fqext2}' txome='{params.txome}' run_camera='{params.run_camera}' organism='{params.organism}' {params.genesets} annotation='{params.annotation}'" {input.script} {log};
+        '''{Rbin} CMD BATCH --no-restore --no-save "--args metafile='{params.metatsv}' design='{params.design}' contrast='{params.contrast}' outFile='{output}' gtf='{params.gtf}' genome='{params.genome}' fastqdir='{params.fastqdir}' fqsuffix='{params.fqsuffix}' fqext1='{params.fqext1}' fqext2='{params.fqext2}' txome='{params.txome}' run_camera='{params.run_camera}' organism='{params.organism}' {params.genesets} annotation='{params.annotation}'" {input.script} {log};
         cat {output}
         '''
        

@@ -6,15 +6,15 @@
 
 rule jbrowsemeta:
   input:
-    metacsv = config['metacsv']
+    metatsv = config['metatsv']
   output:
-    metacsv = "/var/www/html/jbrowse/" + os.path.basename(proj_dir) + config['metacsv']
+    metatsv = "/var/www/html/jbrowse/" + os.path.basename(proj_dir) + config['metatsv']
   threads:
     config['ncores']
   conda:
     "../envs/environment.yaml"
   shell:
-    "cp {input.metacsv} {output.metacsv}"
+    "cp {input.metatsv} {output.metatsv}"
 
 rule jbrowse:
 	input:
@@ -57,11 +57,11 @@ rule jbrowsetracklist:
 		outputdir + "logs/browsetracklist.log"
 	params:
 	  proj_name = os.path.basename(proj_dir),
-	  metacsv = os.path.basename(proj_dir) + "/" + config['metacsv']
+	  metatsv = os.path.basename(proj_dir) + "/" + config['metatsv']
 	conda:
 		"../envs/environment.yaml"
 	shell:
-	  "{input.script} '{params.proj_name}' '{params.metacsv}'; "
+	  "{input.script} '{params.proj_name}' '{params.metatsv}'; "
 	  "ln -sr {input.refdir} {output.refdir_symlink}; "
 	  "ln -s {input.gff} {output.gff_symlink}; "
 	  "ln -s {input.gff_tbi} {output.gff_tbi_symlink}; "

@@ -173,10 +173,12 @@ plot_distribution_of_clones_across_clusters <- function(seu, seu_name){
   return(mypatch)
 }
 
-make_numbat_plot_files <- function(sample_id, myseus, mynbs, merged_metadata){
+make_numbat_plot_files_old <- function(sample_id, myseus, mynbs, merged_metadata){
 
   output_plots <- list()
   seu <- readRDS(myseus[[sample_id]])
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
+
 
   merged_metadata_transfer <-
     merged_metadata %>%
@@ -224,109 +226,118 @@ make_numbat_plot_files <- function(sample_id, myseus, mynbs, merged_metadata){
   return(plot_files)
 }
 
-make_numbat_plot_files_sridhar <- function(sample_id, myseus, mynbs, merged_metadata){
-
+make_numbat_plot_files <- function(done_file){
+  # browser()
   output_plots <- list()
-  seu <- readRDS(myseus[[sample_id]])
 
-  merged_metadata_transfer <-
-    merged_metadata %>%
-    dplyr::filter(sample_id == {{sample_id}}) %>%
-    tibble::column_to_rownames("cell") %>%
-    identity()
+  sample_id <- path_file(path_dir(done_file))
 
-  seu <- Seurat::AddMetaData(seu, merged_metadata_transfer)
+  numbat_dir = fs::path_split(done_file)[[1]][[2]]
 
-  plot_markers(seu, metavar = "merged_leiden", marker_method = "presto", return_plotly = FALSE) +
-    labs(title = sample_id)
-  ggsave(glue("results/{sample_id}_merged_marker.pdf"))
+  dir_create(glue("results/{numbat_dir}"))
 
-  plot_markers(seu, metavar = "gene_snn_res.0.2", marker_method = "presto", return_plotly = FALSE) +
-    labs(title = sample_id)
-  ggsave(glue("results/{sample_id}_sample_marker.pdf"))
+  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds"))
 
-  output_plots[["merged_marker"]] + output_plots[["sample_marker"]]
-  ggsave(glue("results/{sample_id}_combined_marker.pdf"))
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
 
-  seu <- annotate_seu_with_rb_subtype_gene_expression(seu)
-
-  mynb <- readRDS(mynbs[[sample_id]])
+  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
 
   nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
-    dplyr::mutate(cell = str_replace(cell, "-", "\\.")) %>%
+    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
     tibble::column_to_rownames("cell")
 
   seu <- Seurat::AddMetaData(seu, nb_meta)
 
-  DimPlot(seu, group.by = c("merged_leiden", "gene_snn_res.0.2", "clone_opt", "Phase")) +
+  seu <- seu[,!is.na(seu$clone_opt)]
+
+  # merged_metadata_transfer <-
+  #   merged_metadata %>%
+  #   dplyr::filter(sample_id == {{sample_id}}) %>%
+  #   dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
+  #   # dplyr::filter(cell %in% colnames(seu)) %>%
+  #   tibble::column_to_rownames("cell") %>%
+  #   identity()
+  #
+  # seu <- Seurat::AddMetaData(seu, merged_metadata_transfer)
+  #
+  # plot_markers(seu, metavar = "merged_leiden", marker_method = "presto", return_plotly = FALSE) +
+  #   labs(title = sample_id)
+  # ggsave(glue("results/{numbat_dir}/{sample_id}_merged_marker.png"))
+
+  plot_markers(seu, metavar = "gene_snn_res.0.2", marker_method = "presto", return_plotly = FALSE) +
+    labs(title = sample_id)
+  ggsave(glue("results/{numbat_dir}/{sample_id}_sample_marker.png"))
+
+  # output_plots[["merged_marker"]] + output_plots[["sample_marker"]]
+  # ggsave(glue("results/{numbat_dir}/{sample_id}_combined_marker.png"))
+
+  # seu <- annotate_seu_with_rb_subtype_gene_expression(seu)
+
+  DimPlot(seu, group.by = c("gene_snn_res.0.2", "clone_opt", "Phase")) +
     plot_annotation(title = sample_id)
-  ggsave(glue("results/{sample_id}_dimplot.pdf"))
+  ggsave(glue("results/{numbat_dir}/{sample_id}_dimplot.png"), width = 10)
 
 
   ## clone distribution ------------------------------
   plot_distribution_of_clones_across_clusters(seu, sample_id)
-  ggsave(glue("results/{sample_id}_clone_distribution.pdf"), width = 6, height = 4)
+  ggsave(glue("results/{numbat_dir}/{sample_id}_clone_distribution.png"), width = 10, height = 4)
 
-  plot_types <- c("dimplot", "merged_marker", "combined_marker", "clone_distribution")
+  plot_types <- c("dimplot", "sample_marker", "clone_distribution")
 
-  plot_files <- glue("results/{sample_id}_{plot_types}.pdf") %>%
+  plot_files <- glue("results/{numbat_dir}/{sample_id}_{plot_types}.png") %>%
     set_names(plot_types)
 
   return(plot_files)
 }
 
-make_numbat_plot_files_sridhar_cone <- function(sample_id, myseus, mynbs, merged_metadata){
+make_numbat_heatmaps <- function(done_file, p_min = 0.9, line_width = 0.1){
+  # browser()
 
-  output_plots <- list()
-  seu <- readRDS(myseus[[sample_id]])
+  sample_id <- path_file(path_dir(done_file))
 
-  merged_metadata_transfer <-
-    merged_metadata %>%
-    dplyr::filter(sample_id == {{sample_id}}) %>%
-    tibble::column_to_rownames("cell") %>%
-    identity()
+  numbat_dir = fs::path_split(done_file)[[1]][[2]]
 
-  seu <- Seurat::AddMetaData(seu, merged_metadata_transfer)
+  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds"))
 
-  plot_markers(seu, metavar = "merged_leiden", marker_method = "presto", return_plotly = FALSE) +
-    labs(title = sample_id)
-  ggsave(glue("results/{sample_id}_merged_marker.pdf"))
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
 
-  plot_markers(seu, metavar = "gene_snn_res.0.2", marker_method = "presto", return_plotly = FALSE) +
-    labs(title = sample_id)
-  ggsave(glue("results/{sample_id}_sample_marker.pdf"))
-
-  output_plots[["merged_marker"]] + output_plots[["sample_marker"]]
-  ggsave(glue("results/{sample_id}_combined_marker.pdf"))
-
-  seu <- annotate_seu_with_rb_subtype_gene_expression(seu)
-
-  mynb <- readRDS(mynbs[[sample_id]])
+  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
 
   nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
-    dplyr::mutate(cell = str_replace(cell, "-", "\\.")) %>%
+    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
     tibble::column_to_rownames("cell")
 
   seu <- Seurat::AddMetaData(seu, nb_meta)
 
-  DimPlot(seu, group.by = c("merged_leiden", "gene_snn_res.0.2", "clone_opt", "Phase")) +
-    plot_annotation(title = sample_id)
-  ggsave(glue("results/{sample_id}_dimplot.pdf"))
+  myannot <- mynb$clone_post[,c("cell", "GT_opt")]
+  # myannot <- mynb$clone_post[,c("cell", "GT_opt", "clone_opt")]
 
+  ## numbat ------------------------------
+  numbat_heatmap <- safe_plot_numbat(mynb, seu, myannot, sample_id, clone_bar = TRUE, p_min = p_min, line_width = line_width)[["result"]]
 
-  ## clone distribution ------------------------------
-  plot_distribution_of_clones_across_clusters(seu, sample_id)
-  ggsave(glue("results/{sample_id}_clone_distribution.pdf"), width = 6, height = 4)
+  scna_variability_plot <- plot_variability_at_SCNA(numbat_heatmap[["data"]])
 
-  plot_types <- c("dimplot", "merged_marker", "combined_marker", "clone_distribution")
+  patchwork::wrap_plots(numbat_heatmap, scna_variability_plot, ncol = 1)
+  ggsave(glue("results/{numbat_dir}/{sample_id}_numbat_probability.pdf"))
 
-  plot_files <- glue("results/{sample_id}_{plot_types}.pdf") %>%
+  # ## numbat phylo ------------------------------
+  # numbat_heatmap_w_phylo <- safe_plot_numbat_w_phylo(mynb, seu, myannot, sample_id, clone_bar = FALSE, p_min = 0.9)[["result"]]
+  #
+  # scna_variability_plot_w_phylo <- plot_variability_at_SCNA(numbat_heatmap_w_phylo[[3]][["data"]])
+  #
+  # patchwork::wrap_plots(numbat_heatmap_w_phylo, scna_variability_plot_w_phylo, ncol = 1)
+  # ggsave(glue("results/{numbat_dir}/{sample_id}_numbat_phylo_probability.pdf"))
+
+  plot_types <- c("numbat_probability")
+
+  plot_files <- glue("results/{numbat_dir}/{sample_id}_{plot_types}.pdf") %>%
     set_names(plot_types)
 
   return(plot_files)
+  # return(numbat_heatmap)
 }
 
-make_numbat_heatmaps <- function(sample_id, myseus, mynbs, merged_metadata){
+make_numbat_heatmaps_old <- function(sample_id, myseus, mynbs, merged_metadata){
 
   output_plots <- list()
   seu <- readRDS(myseus[[sample_id]])
@@ -571,7 +582,7 @@ filter_phylo_plot <- function(nb, myseu, myannot, mytitle, expressions, ...) {
 
 }
 
-diffex_groups <- function(sample_id, myseus, celldf, ...){
+diffex_groups_old <- function(sample_id, myseus, celldf, ...){
 
   seu <- readRDS(myseus[[sample_id]])
 
@@ -584,6 +595,96 @@ diffex_groups <- function(sample_id, myseus, celldf, ...){
   seu <- Seurat::AddMetaData(seu, celldf)
 
   Seurat::FindMarkers(seu, ...)
+
+}
+
+
+retrieve_numbat_seurat <- function(done_file){
+
+  sample_id <- path_file(path_dir(done_file))
+
+  numbat_dir = fs::path_split(done_file)[[1]][[2]]
+
+  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds"))
+
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
+
+  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
+
+  nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
+    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
+    tibble::column_to_rownames("cell")
+
+  seu <- Seurat::AddMetaData(seu, nb_meta)
+
+  return(seu)
+
+}
+
+
+diffex_groups <- function(done_file, filter_expressions, idents = NULL){
+
+  sample_id <- path_file(path_dir(done_file))
+
+  ident.1 = idents[[sample_id]]
+
+  filter_expressions <- filter_expressions[[sample_id]]
+
+  numbat_dir = fs::path_split(done_file)[[1]][[2]]
+
+  dir_create(glue("results/{numbat_dir}"))
+
+  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds"))
+
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
+
+  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
+
+  pull_cells_matching_expression <- function(myexpression, joint_post){
+    # browser()
+    excluded_cells <-
+      joint_post %>%
+      dplyr::filter(!!parse_expr(myexpression)) %>%
+      dplyr::pull(cell) %>%
+      identity()
+
+    return(excluded_cells)
+
+  }
+
+  joined_nb_meta <-
+    mynb$clone_post %>%
+    dplyr::select(-p_cnv) %>%
+    dplyr::left_join(mynb$joint_post, by = "cell")
+
+  excluded_cells <- map(filter_expressions, pull_cells_matching_expression, joined_nb_meta) %>%
+    unlist()
+
+  nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
+    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
+    dplyr::filter(!cell %in% excluded_cells) %>%
+    tibble::column_to_rownames("cell")
+
+  seu <- Seurat::AddMetaData(seu, nb_meta)
+
+  seu <- seu[,!is.na(seu$clone_opt)]
+
+  diffex <- Seurat::FindMarkers(seu, ident.1)
+
+  gse_plot_path <- glue("results/{numbat_dir}/{sample_id}_gsea.pdf")
+  gse_plot <- enrichment_analysis(diffex) +
+    labs(title = glue("{sample_id}"))
+  ggsave(gse_plot_path)
+
+  diffex_path <- glue("results/{numbat_dir}/{sample_id}_diffex.csv")
+  diffex <-
+    diffex %>%
+    tibble::rownames_to_column("symbol") %>%
+    dplyr::left_join(annotables::grch38, by = "symbol") %>%
+    dplyr::distinct(ensgene, .keep_all = TRUE)
+  write_csv(diffex, diffex_path)
+
+  return(list(sample_id, diffex_path, gse_plot_path))
 
 }
 
@@ -653,6 +754,10 @@ enrichment_analysis <- function(df, fold_change_col = "avg_log2FC", ...){
   possible_dotplot <- possibly(dotplot, otherwise = NA_real_)
 
   mydotplot <- possible_dotplot(gse, showCategory=10, split=".sign", font.size = 8, ...) + facet_grid(.~.sign)
+
+  if(is.null(mydotplot)){
+    mydotplot <- ggplot()
+  }
 
   return(mydotplot)
 
@@ -820,37 +925,22 @@ output_sample_files <- function(output_plot_files) {
 
 }
 
+collate_numbat_plots <- function(done_file){
 
-collate_numbat_plots <- function(sample_id, mynbs){
+  sample_id <- fs::path_split(done_file)[[1]][[3]]
 
-  numbat_dir <- str_remove(mynbs[[sample_id]], "_numbat.rds")
+  numbat_dir <- path_dir(done_file)
 
-  final_clones_plot <- path(numbat_dir, "bulk_clones_final.png")
+  numbat_plots <- dir_ls(numbat_dir, glob = "*.png") %>%
+    set_names(path_file(.))
 
-  expression_plot <- path(numbat_dir, "exp_roll_clust.png")
+  seurat_plot_dir <- fs::path_split(done_file)[[1]][[2]]
 
-  plot_types <- list(
-    "final_clones" = final_clones_plot,
-    "expression" = expression_plot
-    )
+  seurat_plots <- dir_ls(glue("results/{seurat_plot_dir}/"), glob = glue("*{sample_id}*.png"))
 
-  return(plot_types)
-}
+  numbat_plots <- c(numbat_plots, seurat_plots)
 
-collate_numbat_plots <- function(sample_id, mynbs, dir_extension = "numbat"){
-
-  dir_extensions <- c("numbat", "numbat_sridhar", "numbat_sridhar_cone")
-
-  numbat_dir <- str_remove(mynbs[[sample_id]], "_numbat.rds")
-
-  numbat_dirs <- str_replace(numbat_dir, "numbat", dir_extensions)
-
-  expression_plots <- path(numbat_dirs, "exp_roll_clust.png") %>%
-    set_names(dir_extensions)
-
-  expression_plots <- expression_plots[file_exists(expression_plots)]
-
-  return(expression_plots)
+  return(numbat_plots)
 }
 
 numbat_pngs_to_pdf <- function(expression_files, output_pdf = "results/numbat_expression.pdf"){
@@ -962,6 +1052,32 @@ make_all_numbat_plots <- function(numbat_dir, num_iter = 2, min_LLR = 2, genome 
 
     return("success!")
 
-  }
+}
+
+retrieve_done_files <- function(numbat_dir){
+
+  fs::dir_ls(numbat_dir, glob = "*done.txt", recurse = TRUE) %>%
+    set_names(path_file(path_dir(.)))
+}
 
 
+retrieve_numbat_plot_type <- function(numbat_mini_plots, plot_type = "exp_roll_clust.png"){
+  retrieved_plot_types <- map(numbat_mini_plots, ~set_names(.x, fs::path_file(.x))) %>%
+    map(plot_type) %>%
+    compact() %>%
+    unlist() %>%
+    set_names(fs::path_file(fs::path_dir(.))) %>%
+    identity()
+
+
+}
+
+reroute_done_to_results_pdf <- function(done_file, label = ""){
+
+  mypngs <- collate_numbat_plots(done_file)
+
+  results_file <- glue("results/{path_file(path_dir(done_file))}_{label}.pdf")
+
+  numbat_pngs_to_pdf(mypngs, results_file)
+
+}
