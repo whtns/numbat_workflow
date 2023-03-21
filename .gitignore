@@ -10,4 +10,5 @@ results/*
 _targets
 .env
 *.Rproj
+*.pdf
 

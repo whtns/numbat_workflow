@@ -1,10 +1,10 @@
-INFO [2023-03-02 20:02:22] Numbat version: 1.2.2
+INFO [2023-03-09 04:16:27] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
 gamma = 20
 min_cells = 10
-init_k = 3
+init_k = nan
 max_cost = 900
 n_cut = 0
 max_iter = 2
@@ -26,13 +26,7 @@ plot = TRUE
 genome = hg38
 Input metrics:
 3000 cells
-INFO [2023-03-02 20:02:23] Mem used: 1Gb
-INFO [2023-03-02 20:02:26] Approximating initial clusters using smoothed expression ..
-INFO [2023-03-02 20:02:26] Mem used: 1Gb
-INFO [2023-03-02 20:05:33] running hclust...
-INFO [2023-03-02 20:08:16] Iteration 1
-INFO [2023-03-02 20:08:17] Mem used: 4.14Gb
-INFO [2023-03-02 20:08:26] Running HMMs on 5 cell groups..
-INFO [2023-03-02 20:08:34] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12c,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
-INFO [2023-03-02 20:09:06] Expression noise level: medium (0.74). 
-INFO [2023-03-02 20:09:06] No CNV remains after filtering by LLR in pseudobulks. Consider reducing min_LLR.
+INFO [2023-03-09 04:16:27] Mem used: 1Gb
+INFO [2023-03-09 04:16:30] Approximating initial clusters using smoothed expression ..
+INFO [2023-03-09 04:16:30] Mem used: 1Gb
+INFO [2023-03-09 04:19:34] running hclust...

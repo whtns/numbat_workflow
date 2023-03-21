@@ -1,10 +1,10 @@
-INFO [2023-03-03 05:43:31] Numbat version: 1.2.2
+INFO [2023-03-09 14:24:44] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
 gamma = 20
 min_cells = 10
-init_k = 3
+init_k = 5.0
 max_cost = 559.8
 n_cut = 0
 max_iter = 2
@@ -26,44 +26,45 @@ plot = TRUE
 genome = hg38
 Input metrics:
 1866 cells
-INFO [2023-03-03 05:43:31] Mem used: 0.704Gb
-INFO [2023-03-03 05:43:34] Approximating initial clusters using smoothed expression ..
-INFO [2023-03-03 05:43:34] Mem used: 0.704Gb
-INFO [2023-03-03 05:44:40] running hclust...
-INFO [2023-03-03 05:46:25] Iteration 1
-INFO [2023-03-03 05:46:25] Mem used: 2.65Gb
-INFO [2023-03-03 05:46:34] Running HMMs on 5 cell groups..
-INFO [2023-03-03 05:46:42] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
-INFO [2023-03-03 05:47:06] Expression noise level: medium (0.81). 
-INFO [2023-03-03 05:47:26] Running HMMs on 3 cell groups..
-INFO [2023-03-03 05:47:31] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
-INFO [2023-03-03 05:47:50] Evaluating CNV per cell ..
-INFO [2023-03-03 05:47:50] Mem used: 1.88Gb
-INFO [2023-03-03 05:47:51] Excluding clonal LOH regions .. 
-INFO [2023-03-03 05:56:13] All cells succeeded
-INFO [2023-03-03 05:56:15] Building phylogeny ..
-INFO [2023-03-03 05:56:16] Mem used: 1.89Gb
-INFO [2023-03-03 05:56:16] Using 1 CNVs to construct phylogeny
-INFO [2023-03-03 05:56:21] Using NJ tree as seed..
-INFO [2023-03-03 05:56:21] Mem used: 1.9Gb
-INFO [2023-03-03 05:56:27] Found 1306 normal cells..
-INFO [2023-03-03 05:57:05] Iteration 2
-INFO [2023-03-03 05:57:05] Mem used: 1.91Gb
-INFO [2023-03-03 05:57:11] Running HMMs on 2 cell groups..
-INFO [2023-03-03 05:57:14] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
-INFO [2023-03-03 05:57:42] Running HMMs on 2 cell groups..
-INFO [2023-03-03 05:57:46] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
-INFO [2023-03-03 05:58:04] Evaluating CNV per cell ..
-INFO [2023-03-03 05:58:05] Mem used: 1.59Gb
-INFO [2023-03-03 05:58:06] Excluding clonal LOH regions .. 
-INFO [2023-03-03 06:06:33] All cells succeeded
-INFO [2023-03-03 06:06:35] Building phylogeny ..
-INFO [2023-03-03 06:06:36] Mem used: 1.59Gb
-INFO [2023-03-03 06:06:36] Using 1 CNVs to construct phylogeny
-INFO [2023-03-03 06:06:40] Using NJ tree as seed..
-INFO [2023-03-03 06:06:41] Mem used: 1.59Gb
-INFO [2023-03-03 06:06:47] Found 1517 normal cells..
-INFO [2023-03-03 06:07:28] Running HMMs on 2 cell groups..
-INFO [2023-03-03 06:07:30] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13c,14a,15a,16a,17a,18a,19a,20a,21a
-INFO [2023-03-03 06:07:31] diploid regions: 1a,1c,2a,3a,4a,5a,5c,6a,7a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a,22a
-INFO [2023-03-03 06:07:48] All done!
+INFO [2023-03-09 14:24:44] Mem used: 0.704Gb
+INFO [2023-03-09 14:24:47] Approximating initial clusters using smoothed expression ..
+INFO [2023-03-09 14:24:47] Mem used: 0.704Gb
+INFO [2023-03-09 14:25:55] running hclust...
+INFO [2023-03-09 14:27:43] Iteration 1
+INFO [2023-03-09 14:27:43] Mem used: 2.65Gb
+INFO [2023-03-09 14:27:58] Running HMMs on 9 cell groups..
+INFO [2023-03-09 14:28:11] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
+INFO [2023-03-09 14:28:52] Expression noise level: medium (0.81). 
+INFO [2023-03-09 14:29:23] Running HMMs on 5 cell groups..
+INFO [2023-03-09 14:29:29] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
+INFO [2023-03-09 14:29:54] Evaluating CNV per cell ..
+INFO [2023-03-09 14:29:54] Mem used: 2.24Gb
+INFO [2023-03-09 14:29:55] Excluding clonal LOH regions .. 
+INFO [2023-03-09 14:38:25] All cells succeeded
+INFO [2023-03-09 14:38:28] Building phylogeny ..
+INFO [2023-03-09 14:38:29] Mem used: 2.25Gb
+INFO [2023-03-09 14:38:29] Using 2 CNVs to construct phylogeny
+INFO [2023-03-09 14:38:34] Using UPGMA tree as seed..
+INFO [2023-03-09 14:38:34] Mem used: 2.27Gb
+INFO [2023-03-09 14:38:42] Found 1340 normal cells..
+INFO [2023-03-09 14:38:44] Iteration 2
+INFO [2023-03-09 14:38:44] Mem used: 2.28Gb
+INFO [2023-03-09 14:38:51] Running HMMs on 3 cell groups..
+INFO [2023-03-09 14:38:55] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
+INFO [2023-03-09 14:39:29] Running HMMs on 3 cell groups..
+INFO [2023-03-09 14:39:33] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a
+INFO [2023-03-09 14:39:53] Evaluating CNV per cell ..
+INFO [2023-03-09 14:39:54] Mem used: 1.74Gb
+INFO [2023-03-09 14:39:54] Excluding clonal LOH regions .. 
+INFO [2023-03-09 14:48:17] All cells succeeded
+INFO [2023-03-09 14:48:19] Building phylogeny ..
+INFO [2023-03-09 14:48:19] Mem used: 1.74Gb
+INFO [2023-03-09 14:48:19] Using 2 CNVs to construct phylogeny
+INFO [2023-03-09 14:48:24] Using UPGMA tree as seed..
+INFO [2023-03-09 14:48:25] Mem used: 1.74Gb
+INFO [2023-03-09 14:48:29] opt_move:7d->7b, cost=182
+INFO [2023-03-09 14:48:31] Found 1696 normal cells..
+INFO [2023-03-09 14:48:38] Running HMMs on 2 cell groups..
+INFO [2023-03-09 14:48:40] diploid regions: 1a,2a,3a,4a,5a,6a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,20a
+INFO [2023-03-09 14:48:41] diploid regions: 1a,1c,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12a,13a,13c,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-09 14:48:59] All done!

@@ -1,10 +1,10 @@
-INFO [2023-03-03 01:18:50] Numbat version: 1.2.2
+INFO [2023-03-09 09:46:15] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
 gamma = 20
 min_cells = 10
-init_k = 3
+init_k = 5.0
 max_cost = 900
 n_cut = 0
 max_iter = 2
@@ -26,20 +26,20 @@ plot = TRUE
 genome = hg38
 Input metrics:
 3000 cells
-INFO [2023-03-03 01:18:51] Mem used: 1.06Gb
-INFO [2023-03-03 01:18:54] Approximating initial clusters using smoothed expression ..
-INFO [2023-03-03 01:18:54] Mem used: 1.06Gb
-INFO [2023-03-03 01:22:05] running hclust...
-INFO [2023-03-03 01:24:48] Iteration 1
-INFO [2023-03-03 01:24:48] Mem used: 4.21Gb
-INFO [2023-03-03 01:25:01] Running HMMs on 5 cell groups..
-INFO [2023-03-03 01:25:11] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,10c,11a,12b,13a,14a,15a,16a,16c,17a,18a,19a,20a,21a,22a
-INFO [2023-03-03 01:25:50] Expression noise level: medium (0.72). 
-INFO [2023-03-03 01:26:20] Running HMMs on 3 cell groups..
-INFO [2023-03-03 01:26:25] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12b,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
-INFO [2023-03-03 01:26:53] Evaluating CNV per cell ..
-INFO [2023-03-03 01:26:53] Mem used: 3.19Gb
-INFO [2023-03-03 01:39:30] All cells succeeded
-INFO [2023-03-03 01:39:32] Building phylogeny ..
-INFO [2023-03-03 01:39:33] Mem used: 3.2Gb
-INFO [2023-03-03 01:39:33] No CNV remains after filtering by entropy in single cells. Consider increasing max_entropy.
+INFO [2023-03-09 09:46:16] Mem used: 1.06Gb
+INFO [2023-03-09 09:46:19] Approximating initial clusters using smoothed expression ..
+INFO [2023-03-09 09:46:19] Mem used: 1.06Gb
+INFO [2023-03-09 09:49:27] running hclust...
+INFO [2023-03-09 09:52:15] Iteration 1
+INFO [2023-03-09 09:52:15] Mem used: 4.21Gb
+INFO [2023-03-09 09:52:35] Running HMMs on 9 cell groups..
+INFO [2023-03-09 09:52:56] diploid regions: 1a,2a,2c,3a,4a,5a,6a,6c,7a,8a,8c,9a,10a,10c,11a,12a,12c,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-09 09:53:55] Expression noise level: medium (0.72). 
+INFO [2023-03-09 09:54:40] Running HMMs on 5 cell groups..
+INFO [2023-03-09 09:54:48] diploid regions: 1a,2a,3a,4a,5a,6a,6c,7a,8a,8c,9a,10a,11a,12a,12c,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-09 09:55:24] Evaluating CNV per cell ..
+INFO [2023-03-09 09:55:25] Mem used: 3.75Gb
+INFO [2023-03-09 10:08:26] All cells succeeded
+INFO [2023-03-09 10:08:28] Building phylogeny ..
+INFO [2023-03-09 10:08:28] Mem used: 3.76Gb
+INFO [2023-03-09 10:08:28] No CNV remains after filtering by entropy in single cells. Consider increasing max_entropy.
