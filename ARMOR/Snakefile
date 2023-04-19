@@ -120,10 +120,10 @@ def numbat_output(wildcards):
   input.extend(expand(outputdir + "numbat/{sample}_allele_counts.tsv.gz", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  # input.extend(expand(outputdir + "numbat_sridhar/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  # input.extend(expand(outputdir + "numbat_sridhar/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
-  input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "numbat_sridhar/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "numbat_sridhar/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "numbat_sridhar_mini/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}/done.txt", sample = samples.name[samples.type == 'PE'].values.tolist()))
   # input.extend(expand(outputdir + "numbat_sridhar_cone/{sample}_numbat.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
   return input
@@ -131,11 +131,20 @@ def numbat_output(wildcards):
 def seurat_output(wildcards):
   input = []
   input.extend(expand(outputdir + "seurat/{sample}_seu.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "seurat/{sample}_embeddings.csv", sample = samples.name[samples.type == 'PE'].values.tolist()))
   return input
  
 def infercnv_output(wildcards):
   input = []
   input.extend(expand(outputdir + "infercnv/{sample}/infercnv.png", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  return input
+
+def velocyto_output(wildcards):
+  input = []
+  input.extend(expand(outputdir + "velocyto/{sample}.loom", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  # input.extend(expand(outputdir + "velocyto/{sample}_seu.rds", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "scanpy/{sample}_scvelo.h5ad", sample = samples.name[samples.type == 'PE'].values.tolist()))
+  input.extend(expand(outputdir + "scvelo/{sample}_embedding_grid.pdf", sample = samples.name[samples.type == 'PE'].values.tolist()))
   return input
  
 ## ------------------------------------------------------------------------------------ ##
@@ -147,8 +156,9 @@ rule all:
 		# outputdir + "MultiQC/multiqc_report.html",
 		cellranger_output,
 		numbat_output,
+		velocyto_output,
 		# infercnv_output,
-		# seurat_output,
+		seurat_output
 		# bigwigoutput,
 		# outputdir + "seurat/unfiltered_seu.rds",
 		# outputdir + "kallisto/adata.h5ad",
@@ -157,7 +167,6 @@ rule all:
 		# dexseqoutput,
 		# dbtss_output,
 		# jbrowse_output,
-		# loom_file = outputdir + "velocyto/" + os.path.basename(proj_dir) + ".loom",
 		# velocyto_seu = outputdir + "velocyto/" + "unfiltered_seu.rds",
 		# loom = outputdir + "scenic/unfiltered.loom",
 		# final_loom = outputdir + "scenic/unfiltered-final.loom"
@@ -871,46 +880,90 @@ rule tximeta:
 	shell:
 		'''{Rbin} CMD BATCH --no-restore --no-save "--args salmondir='{params.salmondir}' json='{input.json}' metafile='{input.metatsv}' outrds='{output}' annotation='{params.flag}' organism='{params.organism}'" {input.script} {log}'''
 
-## rna velocity
+
+# rule velocyto:
+# 	input:
+# 	  sample_folder = outputdir + "cellranger/{sample}"
+# 	output:
+# 	  outputdir + "velocyto/{sample}.loom"
+# 	params:
+# 		# name = lambda wildcards: "{sample}".format(sample = wildcards.sample),
+# 		# name = "test0",
+# 		ncores=config["ncores"],
+# 		repeat_mask = config["repeat_mask"],
+# 		gtf = config["gtf"],
+# 		velocyto_threads = config["velocyto_threads"],
+# 		samtools_mem = config["samtools_mem"],
+# 		loom_dir = outputdir + "velocyto/"
+# 		# mem=config["sam_mem"]
+# 	shell:
+# 		"""
+# 		velocyto run10x -m {params.repeat_mask} {input.sample_folder} {params.gtf} > {output}
+# 		velocyto run -b filtered_barcodes.tsv -o output_path -m repeat_msk_srt.gtf possorted_genome_bam.bam mm10_annotation.gtf
+# 		mv 
+# 		"""
+		
 rule velocyto:
 	input:
-	  outputdir + "Rout/pkginstall_state.txt",
-		bam_files = expand(outputdir + "HISAT2/{sample}/{sample}_Aligned.sortedByCoord.out.bam", sample = samples.name.values.tolist()),
+		bam_file = outputdir + "cellranger/{sample}/outs/possorted_genome_bam.bam",
+		barcodes = outputdir + "cellranger/{sample}/outs/filtered_feature_bc_matrix/barcodes.tsv.gz",
 	output:
-		loom_file = outputdir + "velocyto/" + os.path.basename(proj_dir) + ".loom"
+		loom_file = outputdir + "velocyto/{sample}.loom"
 	log:
-		outputdir + "Rout/velocyto.Rout"
+		outputdir + "Rout/velocyto_{sample}.Rout"
 	benchmark:
-		outputdir + "benchmarks/velocyto.txt"
+		outputdir + "benchmarks/velocyto_{sample}.txt"
 	params:
 	  repeat_mask = config["repeat_mask"],
-	  proj_name = os.path.basename(proj_dir),
+	  proj_name = lambda wildcards: "{sample}".format(sample = wildcards.sample),
 	  gtf = config["gtf"],
 	  loom_dir = outputdir + "velocyto/"
 	conda:
 		Renv
 	shell:
-		"velocyto run-smartseq2 -o {params.loom_dir} -m {params.repeat_mask} -e {params.proj_name} {input.bam_files} {params.gtf}"
+	  """
+	  velocyto run -b {input.barcodes} -o {params.loom_dir} -m {params.repeat_mask} -e {params.proj_name} {input.bam_file} {params.gtf}
+	  """
+		
 		
 
 ## rna velocity on a seurat object
-rule velocyto_seurat:
+rule scvelo:
   input:
-  	loom_file = outputdir + "velocyto/" + os.path.basename(proj_dir) + ".loom",
-  	seu_file = outputdir + "seurat/unfiltered_seu.rds",
-  	script = "scripts/compute_velocity.R"
+  	loom_file = outputdir + "velocyto/{sample}.loom",
+  	anndata_file = outputdir + "scanpy/{sample}.h5ad",
+  	seurat_embeddings = outputdir + "seurat/{sample}_embeddings.csv"
   output:
-    outputdir + "velocyto/unfiltered_seu.rds"
+    outputdir + "scanpy/{sample}_scvelo.h5ad"
 	log:
-		outputdir + "Rout/velocyto.Rout"
+		outputdir + "logs/scvelo_{sample}.log"
 	benchmark:
-		outputdir + "benchmarks/veloctyo_seurat.txt"
+		outputdir + "benchmarks/scvelo_{sample}.txt"
 	params:
-		organism = config["organism"]
-	conda:
-		Renv
+		organism = config["organism"],
+		script = "scripts/compute_velocity.py"
 	shell:
-		'''{Rbin} CMD BATCH --no-restore --no-save "--args loom_path='{input.loom_file}' proj_dir='{proj_dir}' outrds='{output}' organism='{params.organism}'" {input.script} {log}'''
+		"""
+		python {params.script} {input.anndata_file} {input.loom_file} {input.seurat_embeddings}
+		"""
+
+rule plot_scvelo:
+  input:
+  	scvelo_h5ad = outputdir + "scanpy/{sample}_scvelo.h5ad"
+  output:
+    embedding_grid = outputdir + "scvelo/{sample}_embedding_grid.pdf"
+	log:
+		outputdir + "logs/scvelo_{sample}.log"
+	benchmark:
+		outputdir + "benchmarks/scvelo_{sample}.txt"
+	params:
+		organism = config["organism"],
+		script = "scripts/plot_scvelo.py",
+		plot_dir = outputdir + "scvelo"
+	shell:
+		"""
+		python {params.script} {input.scvelo_h5ad} {params.plot_dir}
+		"""
 
 
 ## ------------------------------------------------------------------------------------ ##
@@ -989,6 +1042,23 @@ rule seurat:
 		celltype_ref = config["celltype_ref"]
 	shell:
 		'''{Rbin} CMD BATCH --no-restore --no-save "--args matrix_dir='{input.matrix_dir}' seu_path='{output.seu_path}' celltype_ref='{params.celltype_ref}'" {params.script} {log}'''
+		
+rule seurat_embeddings:
+	input:
+		seu_path = outputdir + "seurat/{sample}_seu.rds",
+		nb_path = outputdir + "numbat_sridhar/{sample}_numbat.rds",
+		script = "scripts/save_seurat_embeddings.R"
+	output:
+		seurat_embeddings = outputdir + "seurat/{sample}_embeddings.csv"
+	log:
+		outputdir + "logs/seurat_{sample}.log"
+	benchmark:
+		outputdir + "benchmarks/seurat_{sample}.txt"
+	threads:
+		config["ncores"]
+	params:
+	shell:
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' nb_path='{input.nb_path}'" {input.script} {log}'''
 
 # rule numbat:
 # 	input:
@@ -1048,20 +1118,21 @@ rule numbat_sridhar:
 	threads:
 		config["ncores"]
 	params:
-	  num_clones = 3,
+	  num_clones = lambda wildcards: table_samples[table_samples.Run == wildcards.sample].num_clone.values[0],
+		numbat_t = config["numbat_t"],
+		gamma = config["gamma"],
 		numbatdir = outputdir + "numbat_sridhar/",
 		max_entropy = config["max_entropy"],
 		min_LLR = config["min_LLR"],
 		max_iter = config["max_iter"],
 		read_prop = config["read_prop"],
 		tau = config["tau"],
-		numbat_t = config["numbat_t"],
 		cell_ceiling = config["cell_ceiling"],
 		prof= outputdir + "numbat_sridhar/{sample}/log.prof",
 		ref_path = config["sridhar_ref_path"],
 		script = "scripts/run_numbat.R"
 	shell:
-		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' ref_path='{params.ref_path}' tau='{params.tau}' init_k='{params.num_clones}' read_prop='{params.read_prop}' max_iter='{params.max_iter}' min_LLR='{params.min_LLR}' t='{params.numbat_t}' cell_ceiling='{params.cell_ceiling}' max_entropy='{params.max_entropy}' allele_df='{input.allele_table}' matrix_file='{input.matrix_file}' out_dir='{params.numbatdir}/{wildcards.sample}' ncores='{threads}' rprof_out='{params.prof}'" {params.script} {log}'''
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' ref_path='{params.ref_path}' t='{params.numbat_t}' gamma='{params.gamma}' tau='{params.tau}' init_k='{params.num_clones}' read_prop='{params.read_prop}' max_iter='{params.max_iter}' min_LLR='{params.min_LLR}' cell_ceiling='{params.cell_ceiling}' max_entropy='{params.max_entropy}' allele_df='{input.allele_table}' matrix_file='{input.matrix_file}' out_dir='{params.numbatdir}/{wildcards.sample}' ncores='{threads}' rprof_out='{params.prof}'" {params.script} {log}'''
 
 rule numbat_sridhar_rds:
 	input:

@@ -1,10 +1,10 @@
-INFO [2023-02-27 06:30:20] Numbat version: 1.2.2
+INFO [2023-04-17 10:39:18] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
-gamma = 20
+gamma = 30
 min_cells = 10
-init_k = 3
+init_k = 6
 max_cost = 1259.1
 n_cut = 0
 max_iter = 2
@@ -15,10 +15,10 @@ multi_allelic = FALSE
 min_LLR = 2
 min_overlap = 0.45
 max_entropy = 0.5
-skip_nj = FALSE
+skip_nj = TRUE
 diploid_chroms = 
-ncores = 6
-ncores_nni = 6
+ncores = 4
+ncores_nni = 4
 common_diploid = TRUE
 tau = 0.3
 check_convergence = FALSE
@@ -26,8 +26,56 @@ plot = TRUE
 genome = hg38
 Input metrics:
 4197 cells
-INFO [2023-02-27 06:30:21] Mem used: 0.814Gb
-INFO [2023-02-27 06:30:25] Approximating initial clusters using smoothed expression ..
-INFO [2023-02-27 06:30:25] Mem used: 0.814Gb
-INFO [2023-02-27 06:36:19] running hclust...
-INFO [2023-02-27 06:39:25] Expression only run done!
+INFO [2023-04-17 10:39:18] Mem used: 0.814Gb
+INFO [2023-04-17 10:39:23] Approximating initial clusters using smoothed expression ..
+INFO [2023-04-17 10:39:23] Mem used: 0.814Gb
+INFO [2023-04-17 10:45:05] running hclust...
+INFO [2023-04-17 10:48:33] Iteration 1
+INFO [2023-04-17 10:48:34] Mem used: 4.92Gb
+INFO [2023-04-17 10:48:52] Running HMMs on 11 cell groups..
+INFO [2023-04-17 10:49:04] diploid regions: 1a,3a,4a,5a,6a,9a,10a,12b,13a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 10:49:50] Expression noise level: medium (0.71). 
+INFO [2023-04-17 10:50:31] Running HMMs on 6 cell groups..
+INFO [2023-04-17 10:50:37] diploid regions: 1a,3a,4a,5a,6a,7a,9a,10a,12b,13a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 10:51:10] Evaluating CNV per cell ..
+INFO [2023-04-17 10:51:10] Mem used: 2.5Gb
+INFO [2023-04-17 10:51:12] Excluding clonal LOH regions .. 
+INFO [2023-04-17 11:13:08] All cells succeeded
+INFO [2023-04-17 11:13:21] Building phylogeny ..
+INFO [2023-04-17 11:13:22] Mem used: 2.57Gb
+INFO [2023-04-17 11:13:22] Using 8 CNVs to construct phylogeny
+INFO [2023-04-17 11:13:22] Only computing UPGMA..
+INFO [2023-04-17 11:13:22] Using UPGMA tree as seed..
+INFO [2023-04-17 11:13:23] Mem used: 2.66Gb
+INFO [2023-04-17 11:14:04] opt_move:2b->2c, cost=6.76
+INFO [2023-04-17 11:14:04] opt_move:16b->12a, cost=39.1
+INFO [2023-04-17 11:14:04] opt_move:2b,2c->12a,16b, cost=43.6
+INFO [2023-04-17 11:14:04] opt_move:8a->11c, cost=631
+INFO [2023-04-17 11:14:05] opt_move:1c->12a,16b,2b,2c, cost=714
+INFO [2023-04-17 11:14:12] Found 93 normal cells..
+INFO [2023-04-17 11:14:16] Iteration 2
+INFO [2023-04-17 11:14:17] Mem used: 2.71Gb
+INFO [2023-04-17 11:14:22] Running HMMs on 4 cell groups..
+INFO [2023-04-17 11:14:27] diploid regions: 1a,2a,3a,4a,5a,6a,9a,10a,12b,13a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 11:15:02] Running HMMs on 4 cell groups..
+INFO [2023-04-17 11:15:07] diploid regions: 1a,3a,4a,5a,6a,9a,10a,12b,13a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 11:15:27] Evaluating CNV per cell ..
+INFO [2023-04-17 11:15:27] Mem used: 2.11Gb
+INFO [2023-04-17 11:15:29] Excluding clonal LOH regions .. 
+INFO [2023-04-17 11:37:50] All cells succeeded
+INFO [2023-04-17 11:38:00] Building phylogeny ..
+INFO [2023-04-17 11:38:01] Mem used: 2.13Gb
+INFO [2023-04-17 11:38:01] Using 5 CNVs to construct phylogeny
+INFO [2023-04-17 11:38:01] Only computing UPGMA..
+INFO [2023-04-17 11:38:01] Using UPGMA tree as seed..
+INFO [2023-04-17 11:38:02] Mem used: 2.13Gb
+INFO [2023-04-17 11:38:25] opt_move:16b->1c, cost=2.38
+INFO [2023-04-17 11:38:25] opt_move:12a->16b,1c, cost=23.9
+INFO [2023-04-17 11:38:25] opt_move:8a->11a, cost=161
+INFO [2023-04-17 11:38:33] Found 105 normal cells..
+INFO [2023-04-17 11:38:42] Running HMMs on 3 cell groups..
+INFO [2023-04-17 11:38:43] diploid regions: 1a,2a,3a,11a
+INFO [2023-04-17 11:38:44] diploid regions: 1a,2b,3a,4a,5a,6a,7a,8b,9a,10a,11a,12b,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 11:38:45] quadruploid state enabled
+INFO [2023-04-17 11:38:45] diploid regions: 1a,2c,3a,4a,5a,6a,7b,8b,9a,9c,10a,11b,12b,13a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-04-17 11:39:03] All done!

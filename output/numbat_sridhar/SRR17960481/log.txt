@@ -1,10 +1,10 @@
-INFO [2023-02-27 08:07:55] Numbat version: 1.2.2
+INFO [2023-03-25 10:22:20] Numbat version: 1.2.2
 Running under parameters:
 t = 1e-05
 alpha = 1e-04
 gamma = 20
 min_cells = 10
-init_k = 3
+init_k = 5
 max_cost = 549.9
 n_cut = 0
 max_iter = 2
@@ -15,10 +15,10 @@ multi_allelic = FALSE
 min_LLR = 2
 min_overlap = 0.45
 max_entropy = 0.5
-skip_nj = FALSE
+skip_nj = TRUE
 diploid_chroms = 
-ncores = 6
-ncores_nni = 6
+ncores = 4
+ncores_nni = 4
 common_diploid = TRUE
 tau = 0.3
 check_convergence = FALSE
@@ -26,8 +26,53 @@ plot = TRUE
 genome = hg38
 Input metrics:
 1833 cells
-INFO [2023-02-27 08:07:55] Mem used: 0.752Gb
-INFO [2023-02-27 08:07:58] Approximating initial clusters using smoothed expression ..
-INFO [2023-02-27 08:07:58] Mem used: 0.752Gb
-INFO [2023-02-27 08:09:00] running hclust...
-INFO [2023-02-27 08:10:27] Expression only run done!
+INFO [2023-03-25 10:22:21] Mem used: 0.752Gb
+INFO [2023-03-25 10:22:23] Approximating initial clusters using smoothed expression ..
+INFO [2023-03-25 10:22:24] Mem used: 0.752Gb
+INFO [2023-03-25 10:23:19] running hclust...
+INFO [2023-03-25 10:25:02] Iteration 1
+INFO [2023-03-25 10:25:02] Mem used: 2.61Gb
+INFO [2023-03-25 10:25:16] Running HMMs on 9 cell groups..
+INFO [2023-03-25 10:25:27] diploid regions: 1a,3a,4a,5a,7a,8a,9a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:26:16] Expression noise level: medium (0.74). 
+INFO [2023-03-25 10:26:52] Running HMMs on 5 cell groups..
+INFO [2023-03-25 10:26:58] diploid regions: 1a,3a,4a,5a,7a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:27:31] Evaluating CNV per cell ..
+INFO [2023-03-25 10:27:31] Mem used: 2.3Gb
+INFO [2023-03-25 10:27:32] Excluding clonal LOH regions .. 
+INFO [2023-03-25 10:37:26] All cells succeeded
+INFO [2023-03-25 10:37:33] Building phylogeny ..
+INFO [2023-03-25 10:37:33] Mem used: 2.33Gb
+INFO [2023-03-25 10:37:33] Using 6 CNVs to construct phylogeny
+INFO [2023-03-25 10:37:33] Only computing UPGMA..
+INFO [2023-03-25 10:37:33] Using UPGMA tree as seed..
+INFO [2023-03-25 10:37:34] Mem used: 2.35Gb
+INFO [2023-03-25 10:37:40] opt_move:6b->6e, cost=24
+INFO [2023-03-25 10:37:40] opt_move:6a->6b,6e, cost=42.6
+INFO [2023-03-25 10:37:40] opt_move:2a->6a,6b,6e, cost=329
+INFO [2023-03-25 10:37:43] Found 168 normal cells..
+INFO [2023-03-25 10:37:45] Iteration 2
+INFO [2023-03-25 10:37:45] Mem used: 2.38Gb
+INFO [2023-03-25 10:37:51] Running HMMs on 4 cell groups..
+INFO [2023-03-25 10:37:56] diploid regions: 1a,2ll,3a,4a,5a,7a,8a,9a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:38:38] Running HMMs on 4 cell groups..
+INFO [2023-03-25 10:38:43] diploid regions: 1a,3a,4a,5a,7a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:39:04] Evaluating CNV per cell ..
+INFO [2023-03-25 10:39:05] Mem used: 1.85Gb
+INFO [2023-03-25 10:39:06] Excluding clonal LOH regions .. 
+INFO [2023-03-25 10:48:42] All cells succeeded
+INFO [2023-03-25 10:48:48] Building phylogeny ..
+INFO [2023-03-25 10:48:48] Mem used: 1.86Gb
+INFO [2023-03-25 10:48:48] Using 5 CNVs to construct phylogeny
+INFO [2023-03-25 10:48:48] Only computing UPGMA..
+INFO [2023-03-25 10:48:48] Using UPGMA tree as seed..
+INFO [2023-03-25 10:48:49] Mem used: 1.86Gb
+INFO [2023-03-25 10:48:53] opt_move:1b->6a, cost=80.3
+INFO [2023-03-25 10:48:53] opt_move:6b->1b,6a, cost=150
+INFO [2023-03-25 10:48:53] opt_move:9b->2a, cost=187
+INFO [2023-03-25 10:48:56] Found 189 normal cells..
+INFO [2023-03-25 10:49:03] Running HMMs on 3 cell groups..
+INFO [2023-03-25 10:49:05] diploid regions: 1a,2a,3a,4a,5a,6a,7a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:49:05] diploid regions: 1a,2a,3a,4a,5a,6b,7a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,22a
+INFO [2023-03-25 10:49:06] diploid regions: 1a,2b,3a,4a,5a,6e,7a,8a,9a,10a,11a,12a,14a,15a,16a,17a,18a,19a,20a,21a,22a
+INFO [2023-03-25 10:49:25] All done!

@@ -10,15 +10,9 @@ library(velocyto.R)
 library(Seurat)
 library(rprojroot)
 library(fs)
-library(seuratTools, lib.loc = "/dataVolume/storage/rpkgs/devel_install/")
+# library(seuratTools, lib.loc = "/dataVolume/storage/rpkgs/devel_install/")
+library(seuratTools)
 proj_dir = rprojroot::find_root(criterion = has_file_pattern("*.Rproj"))
-
-print(proj_dir)
-# print(loom_path)
-# print(organism)
-
-
-seu_file <- seuratTools::load_seurat_path(proj_dir)
 
 seu <- readRDS(seu_file)
 

@@ -7,37 +7,68 @@ from pathlib import Path
 import anndata
 import pandas as pd
 from matplotlib.pyplot import rc_context
+import os 
+import glob
 
-study_paths = {"collin" : "/home/skevin/single_cell_projects/resources/collin_et_al_proj/output/scanpy",
-"wu" : "/home/skevin/single_cell_projects/resources/wu_et_al_proj/output/scanpy",
-"field" : "/home/skevin/single_cell_projects/resources/field_et_al_proj/output/scanpy",
-"yang" : "/home/skevin/single_cell_projects/resources/yang_et_al_proj/output/scanpy"}
+output_study_paths = {"collin" : "output/scanpy/collin_merged",
+"wu" : "output/scanpy/wu_merged",
+"field" : "output/scanpy/field_merged",
+"yang" : "output/scanpy/yang_merged"
+}
+
+metadata_paths = {
+  "collin" : "data/metadata_collin_et_al.csv",
+  "wu" : "data/metadata_wu_et_al.csv",
+  "field" : "data/metadata_field_et_al.csv",
+  "yang" : "data/metadata_yang_et_al.csv"
+}
 
 metadata = dict()
-for i in study_paths:
-  metadata[i] = Path(study_paths[i]).parents[1] / "data" / "metadata.txt"
-  metadata[i] = pd.read_table(metadata[i])
+for k in metadata_paths.keys():
+  # print(metadata[k])
+  metadata[k] = pd.read_csv(metadata_paths[k], on_bad_lines='skip')
 
-study_adatas = dict()
-for study in study_paths:
-  print(study)
-  study_adatas[study] = list(Path(study_paths[study]).glob("*.h5ad"))
-  
-  sample_ids = [anndata_path.parts[8] for anndata_path in study_adatas[study]]
-  
-  study_adatas[study] = [sc.read_h5ad(adata_path) for adata_path in study_adatas[study]]
-  
-  study_adatas[study] = dict(zip(sample_ids, study_adatas[study]))
-  
-  study_adatas[study] = anndata.concat(study_adatas[study], label="sample_id")
-  
+study_scanpy_dirs = {
+  "collin" : "output/scanpy/collin_merged/",
+  "yang" : "output/scanpy/yang_merged/",
+  "field" : "output/scanpy/field_merged/",
+  "wu" : "output/scanpy/wu_merged/"
+}
+
+metadata  = pd.read_csv("results/cell_clusters.csv")
+
+adatas = {
+  "SRR13884242" : "output/scanpy/wu_merged/SRR13884242.h5ad",
+  "SRR13884243" : "output/scanpy/wu_merged/SRR13884243.h5ad",
+  "SRR13884247" : "output/scanpy/wu_merged/SRR13884247.h5ad",
+  "SRR13884249" : "output/scanpy/wu_merged/SRR13884249.h5ad",
+  "SRR14800534" : "output/scanpy/yang_merged/SRR14800534.h5ad",
+  "SRR14800535" : "output/scanpy/yang_merged/SRR14800535.h5ad",
+  "SRR14800536" : "output/scanpy/yang_merged/SRR14800536.h5ad",
+  "SRR14800540" : "output/scanpy/yang_merged/SRR14800540.h5ad",
+  "SRR14800541" : "output/scanpy/yang_merged/SRR14800541.h5ad",
+  "SRR14800543" : "output/scanpy/yang_merged/SRR14800543.h5ad",
+  "SRR17960481" : "output/scanpy/field_merged/SRR17960481.h5ad",
+  "SRR17960484" : "output/scanpy/field_merged/SRR17960484.h5ad"
+}
+
+for k,v in adatas.items():
+  adatas[k] = sc.read_h5ad(adatas[k])
+  sample_meta = metadata.loc[metadata['sample_id'] == k]
+  sample_meta = sample_meta[sample_meta.cell.isin(adatas[k].obs.index)]
+  sample_meta.index = sample_meta.cell
+  adatas[k].obs['cluster'] = sample_meta['cluster']
+
+adata = anndata.concat(adatas, label="dataset")
+
+integrate_combined_adata(adata, "output/scanpy/interesting_adata.h5ad")
+
+sc.tl.leiden(adata, key_added = "leiden_1.0")
+
+sc.tl.dendrogram(adata, groupby = "leiden_1.0")
+sc.pl.dendrogram(adata, groupby = "leiden_1.0")
 
 
-merged_study_paths = dict()
-for study in study_paths:
-  merged_study_paths[study] = Path(study_paths[study]) / "merged" / "merged_study.h5ad"
-  print(study)
-  study_adatas[study].write_h5ad(merged_study_path[study])
 
 
 # process merged study adatas by bbknn ------------------------------
@@ -172,7 +203,7 @@ yang_processed_adata.obs.to_csv("/home/skevin/single_cell_projects/resources/yan
 
 # wu ------------------------------
 
-wu_processed_adata = sc.read_h5ad("/home/skevin/single_cell_projects/resources/wu_et_al_proj/output/scanpy/merged/merged_study_processed.h5ad")
+wu_processed_adata = sc.read_h5ad("output/scanpy/wu_merged/merged_study_processed.h5ad")
 
 sc.pp.log1p(wu_processed_adata)
 
@@ -198,11 +229,11 @@ cross_study_adata.raw = cross_study_adata  # keep full dimension safe
 # cross_study_adata.write_h5ad("output/scanpy/cross_study_adata.h5ad")
 cross_study_adata = sc.read_h5ad("output/scanpy/cross_study_adata.h5ad")
 
-def integrate_combined_adata(study_path):
+subset_cross_study_adata = cross_study_adata
 
-  study_adata = sc.read_h5ad(study_path)
-  
-  processed_study_path = str(study_path).replace(".h5ad", "_bbknn_integrated.h5ad")
+metadata = pd.read_csv("results/cell_clusters.csv")
+
+def integrate_combined_adata(study_adata, processed_study_path):
   
   sc.pp.highly_variable_genes(
       study_adata,
@@ -221,7 +252,6 @@ def integrate_combined_adata(study_path):
   sc.tl.umap(study_adata)
   sc.tl.leiden(study_adata)
   
-  print(processed_study_path)
   study_adata.write_h5ad(processed_study_path)
 
 
@@ -271,3 +301,29 @@ cross_study_adata.write_h5ad("output/scanpy/cross_study_adata_processed.h5ad")
 sc.tl.pca(cross_study_adata, svd_solver='arpack')
 
 sc.pl.pca(cross_study_adata, dimensions = [(5,6)], color='RXRG')
+
+# read adata ------------------------------
+cross_study_adata = sc.read_h5ad("output/scanpy/subset_adata.h5ad")
+
+
+cross_study_adata.obs['combined'] = cross_study_adata.obs['cell'].astype(str) + '_' + cross_study_adata.obs['sample_id'].astype(str)
+cross_study_adata.obs.index = cross_study_adata.obs['combined']
+
+metadata = pd.read_csv("results/cell_clusters.csv")
+
+metadata['combined'] = metadata['cell'].astype(str) + '_' + metadata['sample_id'].astype(str)
+metadata.index = metadata.combined
+
+metadata = metadata[metadata.combined.isin(cross_study_adata.obs.combined)]
+
+cross_study_adata2 = cross_study_adata.copy()
+
+cross_study_adata0 = cross_study_adata2[cross_study_adata2.obs.combined.isin(metadata.combined)]
+
+
+# test0 ------------------------------
+
+
+
+
+

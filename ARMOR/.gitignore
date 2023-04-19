@@ -1,3 +1,4 @@
 .snakemake/*
 .Rproj.user
 *.Rproj
+cache

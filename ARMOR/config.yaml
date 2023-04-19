@@ -27,6 +27,8 @@ gtf: /dataVolume/storage/Homo_sapiens/grch38_tran/Homo_sapiens.GRCh38.87.gtf
 # retinal
 # gtf: /dataVolume/storage/Homo_sapiens/grch38_tran_retinal_reference/Retina_Fetal.Tissue.gtf
 repeat_mask: /dataVolume/storage/Homo_sapiens/grch38_tran/Homo_sapiens.GRCh38.87.rmsk.gtf
+samtools_mem: 3000
+velocyto_threads: 4
 dbtss_bed: /dataVolume/storage/Homo_sapiens/dbtss/corrected_dbtss.bed
 chrom_sizes: /dataVolume/storage/Homo_sapiens/grch38/Homo_sapiens.GRCh38.dna_sm.primary_assembly.chrom.sizes
 ##--------------------------------------------------------------------------------------------
@@ -143,6 +145,7 @@ read_prop: 1
 tau: 0.3
 numbat_t: 1e-5
 cell_ceiling: 1e4
+gamma: 30
 wu_ref_path: /dataVolume/storage/Homo_sapiens/numbat/wu_ref.rds
 yang_ref_path: /dataVolume/storage/Homo_sapiens/numbat/yang_ref.rds
 field_ref_path: /dataVolume/storage/Homo_sapiens/numbat/field_ref.rds

@@ -87,6 +87,7 @@ out = numbat::run_numbat(
 	genome = "hg38",
 	min_cells = 10,
 	t = as.numeric(t),
+	gamma = as.numeric(gamma),
 	max_iter = as.integer(max_iter),
 	max_entropy = max_entropy,
 	segs_loh = segs_loh,
