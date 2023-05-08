@@ -158,6 +158,7 @@ rule all:
 		numbat_output,
 		velocyto_output,
 		# infercnv_output,
+		numbat_output,
 		seurat_output
 		# bigwigoutput,
 		# outputdir + "seurat/unfiltered_seu.rds",
@@ -949,7 +950,8 @@ rule scvelo:
 
 rule plot_scvelo:
   input:
-  	scvelo_h5ad = outputdir + "scanpy/{sample}_scvelo.h5ad"
+  	scvelo_h5ad = outputdir + "scanpy/{sample}_scvelo.h5ad",
+  	script = "scripts/plot_scvelo.py"
   output:
     embedding_grid = outputdir + "scvelo/{sample}_embedding_grid.pdf"
 	log:
@@ -958,11 +960,10 @@ rule plot_scvelo:
 		outputdir + "benchmarks/scvelo_{sample}.txt"
 	params:
 		organism = config["organism"],
-		script = "scripts/plot_scvelo.py",
 		plot_dir = outputdir + "scvelo"
 	shell:
 		"""
-		python {params.script} {input.scvelo_h5ad} {params.plot_dir}
+		python {input.script} {input.scvelo_h5ad} {params.plot_dir}
 		"""
 
 
@@ -1104,6 +1105,23 @@ rule seurat_embeddings:
 # 	shell:
 # 		'''{Rbin} CMD BATCH --no-restore --no-save "--args numbat_dir='{input.numbat_dir}'" {params.script} {log}'''
 
+rule filter_non_tumor_cells_from_seu:
+	input:
+	  numbat_rds = outputdir + "numbat_sridhar/{sample}_numbat.rds",
+		seu_path = outputdir + "seurat/{sample}_seu.rds"
+	output:
+		seu_path_out = outputdir + "seurat/{sample}_filtered_seu.rds"
+	log:
+		outputdir + "logs/numbat_sridhar_{sample}.log"
+	benchmark:
+		outputdir + "benchmarks/numbat_sridhar_{sample}.txt"
+	threads:
+		config["ncores"]
+	params:
+		script = "scripts/filter_non_tumor_cells_from_seu.R"
+	shell:
+		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' numbat_rds='{input.numbat_rds}' seu_path_out='{output.seu_path_out}'" {params.script} {log}'''
+
 rule numbat_sridhar:
 	input:
 		allele_table = outputdir + "numbat/{sample}_allele_counts.tsv.gz",
@@ -1133,6 +1151,7 @@ rule numbat_sridhar:
 		script = "scripts/run_numbat.R"
 	shell:
 		'''{Rbin} CMD BATCH --no-restore --no-save "--args seu_path='{input.seu_path}' ref_path='{params.ref_path}' t='{params.numbat_t}' gamma='{params.gamma}' tau='{params.tau}' init_k='{params.num_clones}' read_prop='{params.read_prop}' max_iter='{params.max_iter}' min_LLR='{params.min_LLR}' cell_ceiling='{params.cell_ceiling}' max_entropy='{params.max_entropy}' allele_df='{input.allele_table}' matrix_file='{input.matrix_file}' out_dir='{params.numbatdir}/{wildcards.sample}' ncores='{threads}' rprof_out='{params.prof}'" {params.script} {log}'''
+
 
 rule numbat_sridhar_rds:
 	input:

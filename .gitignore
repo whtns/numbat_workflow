@@ -12,3 +12,6 @@ _targets
 *.Rproj
 *.pdf
 figures/*
+*.html
+output/Rout/*
+output/velocyto/*

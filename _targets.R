@@ -62,35 +62,22 @@ tar_plan(
   )),
 
   tar_target(large_clone_comparisons, list(
-    "SRR13884242" = list("1_v_2_1q+_16q-" = c("1c", "16b"), "2_v_3_8p+_11p+" = c("8a", "11b"), "3_v_4_2+" = c("2c")), # 16q
-    "SRR13884243" = list("1_v_2_1q+_16q-"= c("1b", "16b"), "2_v_3_8p+_11p+" = c("8a", "11a")), # 16q and 1q
-    "SRR13884247" = list("1_v_2_6p+" = c("6c"), "2_v_3_17q+" = c("17d"), "3_v_4_10q+" = c("10b"), "3_v_5_1p-" = c("1a"), "2_v_6_2p+" = c("2b")), # 6p; 1q gain only affects GT 4
-    "SRR13884249" = list("1_v_2_1q+" = c("1b"), "2_v_3_2p+" = c("2a")), #1q; 2p only GT 3
-    "SRR14800534" = list("1_v_2_16q-" = c("16c"), "2_v_3_1q+" = c("1b")), #1q only GT 3; maybe reconsider
-    "SRR14800535" = list("1_v_2_16q-" = c("16b"), "2_v_3_1q+" = c("1b")), #1q only GT 3; maybe reconsider
-    "SRR14800536" = list("1_v_2_16q-" = c("16b"), "2_v_3_1q+" = c("1b"), "3_v_4_15q+" = c("15b")), #16q
-    "SRR14800540" = list("1_v_2_6p+_16q-" = c("6b", "16e"), "2_v_3_1q+_7q+" = c("1d", "1e", "7b")), #16q; just 2
-    "SRR14800541" = list("1_v_2_1q+_6p+" = c("1f", "6a"), "2_v_3_16q-" = c("16d")), #16q is only in GT 2; 2,3,4,5 have 1q/2p/6p
-    "SRR14800543" = list("1_v_2_13loh" = c("13a"), "2_v_3_1q+_16q-" = c("1c", "16c")), #1q/16q only in GT 3
-    "SRR17960481" = list("1_v_2_1q+_6p+" = c("1b", "6a", "6b"), "2_v_3_2p+" = c("2a")), #1q/2p/6p
-    "SRR17960484" = list("1_v_2_1q+" = c("1c"), "2_v_3_6p+" = c("6a"), "3_v_4_2p+" = c("2a")) # 16q only in GT 4; 2,3,4 have 1q; interesting sample
+    "SRR13884242" = list("2_v_1_1q+_16q-" = c("1c", "16b"), "3_v_2_8p+_11p+" = c("8a", "11b")), # 16q
+    "SRR13884243" = list("2_v_1_1q+_16q-"= c("1b", "16b"), "3_v_2_8p+_11p+" = c("8a", "11a")), # 16q and 1q
+    "SRR13884247" = list("2_v_1_6p+" = c("6c"), "3_v_2_17q+" = c("17d"), "4_v_3_10q+" = c("10b"), "5_v_3_1p-" = c("1a"), "6_v_2_2p+" = c("2b")), # 6p; 1q gain only affects GT 4
+    "SRR13884249" = list("2_v_1_1q+" = c("1b"), "3_v_2_2p+" = c("2a")), #1q; 2p only GT 3
+    "SRR14800534" = list("2_v_1_16q-" = c("16c"), "3_v_2_1q+" = c("1b")), #1q only GT 3; maybe reconsider
+    "SRR14800535" = list("2_v_1_16q-" = c("16b"), "3_v_2_1q+" = c("1b")), #1q only GT 3; maybe reconsider
+    "SRR14800536" = list("2_v_1_16q-" = c("16b"), "3_v_2_1q+" = c("1b"), "4_v_3_15q+" = c("15b")), #16q
+    "SRR14800540" = list("2_v_1_6p+_16q-" = c("6b", "16e"), "3_v_2_1q+_7q+" = c("1d", "1e", "7b")), #16q; just 2
+    "SRR14800541" = list("2_v_1_1q+_6p+" = c("1f", "6a"), "3_v_2_16q-" = c("16d")), #16q is only in GT 2; 2,3,4,5 have 1q/2p/6p
+    "SRR14800543" = list("2_v_1_13loh" = c("13a"), "3_v_2_1q+_16q-" = c("1c", "16c")), #1q/16q only in GT 3
+    "SRR17960481" = list("2_v_1_1q+_6p+" = c("1b", "6a", "6b"), "3_v_2_2p+" = c("2a")), #1q/2p/6p
+    "SRR17960484" = list("2_v_1_1q+" = c("1c"), "3_v_2_6p+" = c("6a"), "4_v_3_2p+" = c("2a")) # 16q only in GT 4; 2,3,4 have 1q; interesting sample
   )),
 
-  tar_target(mini_clone_comparisons, list(
-    "SRR13884242" = list("1_v_2+_1q+_16q-" = c("1b", "16b"), "2_v_3_8p+_11p+" = c("8a", "11a")), # 16q
-    "SRR13884243" = list("1_v_2+_1q+_16q-"= c("1b", "16b"), "2_v_3_8p+_11p+" = c("8a", "11a")), # 16q and 1q
-    "SRR13884247" = list("1_v_2+_6p+" = c("6c"), "2_v_3_1q+" = c("1b"), "3_v_4_20p-" = c("20d")), # 6p; 1q gain only affects GT 4
-    "SRR13884249" = list("1_v_2+_1q+" = c("1b"), "2_v_3_2p+" = c("2a")), #1q; 2p only GT 3
-    "SRR14800534" = list("1_v_2+_16q-" = c("16c"), "2_v_3_1q+" = c("1b")), #1q only GT 3; maybe reconsider
-    "SRR14800535" = list("1_v_2+_16q-" = c("16b")), #1q only GT 3; maybe reconsider
-    "SRR14800536" = list("1_v_2+_1q+" = c("1b"), "2_v_3_11q-" = c("11b"), "2_v_4_15q+, 19q-" = c("19b", "15b")), #16q
-    "SRR14800540" = list("1_v_2+_1q+" = c("1e"), "1_v_5_6p+" = c("6b"), "2_v_3_6q+_13p-_16q-_20q+" = c("6d", "13d", "16b", "16f", "20c"), "2_v_4_3q-" = c("3b")), #16q; just 2
-    "SRR14800541" = list("1_v_2_1q+_6p+" = c("1f", "6a"), "2_v_3_16q-" = c("16b"), "2_v_4_8p-" = c("8a"), "4_v_5_19p+" = c("19a")), #16q is only in GT 2; 2,3,4,5 have 1q/2p/6p
-    "SRR14800543" = list("1_v_2_13loh_18+" = c("13b", "18a"), "2_v_3_1q+" = c("1c"), "3_v_4_16q-_17p-" = c("16c", "17a")), #1q/16q only in GT 3
-    "SRR17960481" = list("1_v_2_1q+, 6p+" = c("1b", "6a", "6b"), "2_v_3_2p+_9q+" = c("2a", "9b")), #1q/2p/6p
-    "SRR17960484" = list("1_v_2_1q+, 6p+" = c("1e", "6a"), "2_v_3_2p+_10q+" = c("2a", "10b"), "3_v_4_15+" = c("15b"), "2_v_5_16q-" = c("16b"), "5_v_6_17q+" = c("17b"), "5_v_7_5q-" = c("5d"))
-    )
-    ),# 16q only in GT 4; 2,3,4 have 1q; interesting sample)),
+  tar_target(clone_comparison_table,
+             tabulate_clone_comparisons(large_clone_comparisons)),
 
   tar_target(cluster_for_diffex, list(
     "SRR13884242" = 3, # 16q
@@ -135,8 +122,8 @@ tar_plan(
 
   tar_target(
     current_params,
-    retrieve_snakemake_params(mini_done_files),
-    pattern = map(mini_done_files),
+    retrieve_snakemake_params(large_done_files),
+    pattern = map(large_done_files),
     iteration = "list"
   ),
 
@@ -161,93 +148,6 @@ tar_plan(
   #
   # tar_target(collin_metadata, get_merged_metadata("output/scanpy/collin_merged/metadata.csv")),
 
-
-# mini files ------------------------------
-
-tar_target(mini_filter_expressions, list(
-  "SRR13884241" = c(
-    'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1) & p_cnv > 0.25 & seg == "2a"'
-  ),
-  "SRR13884242" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"'
-  ),
-  "SRR13884243" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"'
-  ),
-  "SRR13884245" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16a"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16a"'
-  ),
-  "SRR13884247" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "6c"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "6c"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1b"'
-  ),
-  "SRR13884249" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "2a"',
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "2a"'
-  ),
-  "SRR14800534" = c(
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR14800535" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"'
-  ),
-  "SRR14800536" = c(
-    'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR14800537" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR14800539" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "2a"'
-  ),
-  "SRR14800540" = c(
-    'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "1e"',
-    'clone_opt %in% c(1,5) & p_cnv > 0.1 & seg == "1e"',
-    'clone_opt %in% c(1,2,3) & p_cnv > 0.1 & seg == "6b"',
-    'clone_opt %in% c(4,5) & p_cnv < 0.8 & seg == "6b"'
-  ),
-  "SRR14800541" = c(
-    'clone_opt %in% c(2,3,4,5) & p_cnv < 0.8 & seg == "1f"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1f"',
-    'clone_opt %in% c(1,2,4,5) & p_cnv > 0.1 & seg == "16b"'
-  ),
-  "SRR14800543" = c(
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1c"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1c"',
-    'clone_opt %in% c(1,2,3) & p_cnv > 0.1 & seg == "16c"'
-  ),
-  "SRR17960481" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR17960484" = c(
-    'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.8 & seg == "1e"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1e"',
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1,2,5,6,7) & p_cnv > 0.1 & seg == "2a"'
-    # 'clone_opt %in% c(2,3,4,7) & p_cnv < 0.8 & seg == "6a"',
-    # 'clone_opt %in% c(1,5,6) & p_cnv > 0.1 & seg == "6a"',
-    # 'clone_opt %in% c(1,2,3,4) & p_cnv > 0.1 & seg == "16b"',
-    # 'clone_opt %in% c(5,6,7) & p_cnv < 0.8 & seg == "16b"'
-  )
-)),
-
   tar_target(interesting_samples,
              c(
                "SRR13884242",
@@ -258,267 +158,348 @@ tar_target(mini_filter_expressions, list(
                "SRR14800535",
                "SRR14800536",
                "SRR14800540",
-               "SRR14800541",
                "SRR14800543",
                "SRR17960481",
                "SRR17960484"
              )),
 
+  tar_target(excluded_samples,
+             c(
+               "SRR14800541" # no diploid ancestral clone; only diploid are B2M and APOE
+             )),
 
-  tarchetypes::tar_files(mini_done_files, retrieve_done_files("output/numbat_sridhar_mini/", interesting_samples), format = "file"),
+# mini files ------------------------------
 
-  tar_target(
-    mini_numbat_pdfs,
-    convert_numbat_pngs(mini_done_files),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-  tar_target(
-    mini_plot_files,
-    make_numbat_plot_files(mini_done_files, cluster_dictionary),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-  tar_target(
-    mini_dists,
-    score_filtration(mini_done_files, cluster_dictionary, mini_filter_expressions),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-  tar_target(
-    filtered_mini_plot_files,
-    make_numbat_plot_files(mini_done_files, cluster_dictionary, mini_filter_expressions, extension = "_filtered"),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-  # tar_target(
-  #   filtered_mini_plot_files,
-  #   make_numbat_plot_files("output/numbat_sridhar_mini/SRR14800534/done.txt", cluster_dictionary, mini_filter_expressions),
-  # ),
-
-  tar_target(
-    mini_heatmaps,
-    make_numbat_heatmaps(mini_done_files, p_min = 0.5, line_width = 0.1, mini_filter_expressions, extension = "_filtered"),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-
-  tar_target(mini_montage_pdfs0, make_pdf_montages(filtered_mini_plot_files, mini_heatmaps)),
-
-
-  # tar_target(
-  #   mini_gseas,
-  #   diffex_groups(mini_done_files, mini_filter_expressions, cluster_comparisons),
-  #   pattern = map(mini_done_files),
-  #   iteration = "list"
-  # ),
-
-  # tar_target(
-  #   mini_cluster_gseas,
-  #   enrich_by_cluster(mini_done_files),
-  #   pattern = map(mini_done_files),
-  #   iteration = "list"
-  # ),
-
-  # in segment ------------------------------
-  # tar_target(mini_in_segment_diffex_clones,
-  #            find_diffex_clones(mini_done_files, mini_clone_comparisons, location = "in_segment"),
-  #            pattern = map(mini_done_files),
-  #            iteration = "list"
-  # ),
-  #
-  # tar_target(
-  #   mini_in_segment_diffex_clones_for_each_cluster,
-  #   find_diffex_bw_clones_for_each_cluster(mini_done_files, mini_clone_comparisons, cluster_dictionary, location = "in_segment"),
-  #   pattern = map(mini_done_files),
-  #   iteration = "list"
-  # ),
-  #
-  # tar_target(table_mini_in_segment_diffex_clones,
-  #            tabulate_diffex_clones(mini_in_segment_diffex_clones_for_each_cluster,
-  #                                   "results/diffex_bw_clones_per_cluster_mini_in_segment.xlsx",
-  #                                   "results/diffex_bw_clones_per_cluster_mini_in_segment_by_chr.xlsx",
-  #                                   mini_in_segment_diffex_clones,
-  #                                   "results/diffex_bw_clones_mini_in_segment.xlsx",
-  #                                   "results/diffex_bw_clones_mini_in_segment_by_chr.xlsx"),
-  # ),
-
-  # out of segment ------------------------------
-  # tar_target(mini_out_of_segment_diffex_clones,
-  #            find_diffex_clones(mini_done_files, mini_clone_comparisons, location = "out_of_segment"),
-  #            pattern = map(mini_done_files),
-  #            iteration = "list"
-  # ),
-  #
-  # tar_target(
-  #   mini_out_of_segment_diffex_clones_for_each_cluster,
-  #   find_diffex_bw_clones_for_each_cluster(mini_done_files, mini_clone_comparisons, cluster_dictionary, location = "out_of_segment"),
-  #   pattern = map(mini_done_files),
-  #   iteration = "list"
-  # ),
-  #
-  # tar_target(table_mini_out_of_segment_diffex_clones,
-  #            tabulate_diffex_clones(mini_out_of_segment_diffex_clones_for_each_cluster,
-  #                                   "results/diffex_bw_clones_per_cluster_mini_out_of_segment.xlsx",
-  #                                   "results/diffex_bw_clones_per_cluster_mini_out_of_segment_by_chr.xlsx",
-  #                                   mini_out_of_segment_diffex_clones,
-  #                                   "results/diffex_bw_clones_mini_out_of_segment.xlsx",
-  #                                   "results/diffex_bw_clones_mini_out_of_segment_by_chr.xlsx"),
-  # ),
-
-  tar_target(
-    mini_diffex_bw_clusters_for_each_clone,
-    find_diffex_bw_clusters_for_each_clone(mini_done_files, cluster_dictionary),
-    pattern = map(mini_done_files),
-    iteration = "list"
-  ),
-
-  tar_target(
-    collated_mini_heatmaps,
-    qpdf::pdf_combine(unlist(mini_heatmaps), "results/numbat_sridhar_mini/mini_heatmaps.pdf"),
-  ),
-
-  tar_target(mini_numbat_expression, retrieve_numbat_plot_type(mini_numbat_pdfs, "exp_roll_clust.pdf")),
-  tar_target(mini_numbat_expression_pdf, qpdf::pdf_combine(mini_numbat_expression, "results/numbat_sridhar_mini/mini_numbat_expression.pdf")),
-
-  tar_target(mini_numbat_heatmap_files, retrieve_numbat_plot_type(mini_numbat_pdfs, "panel_2.pdf")),
-  tar_target(mini_numbat_heatmap_pdf, qpdf::pdf_combine(mini_numbat_heatmap_files, "results/numbat_sridhar_mini/mini_numbat_heatmaps.pdf")),
-
-  tar_target(mini_numbat_bulk_clones_final, retrieve_numbat_plot_type(mini_numbat_pdfs, "bulk_clones_final.pdf")),
-  tar_target(mini_numbat_bulk_clones_final_pdf, qpdf::pdf_combine(mini_numbat_bulk_clones_final, "results/numbat_sridhar_mini/mini_bulk_clones_final.pdf")),
-
-  # mini_numbat_sample_pdfs ------------------------------
-  tar_target(
-    mini_numbat_sample_pdfs,
-    reroute_done_to_results_pdf(mini_done_files, "_mini"),
-    pattern = map(mini_done_files),
-    iteration = "list",
-    format = "file"
-  ),
-
-  tar_target(
-    interesting_genes,
-    unlist(list(
-      "1q" = c("ANP32E", "ASH1L", "ASPM", "CENPF", "CKS1B", "CNIH4", "CRABP2", "ENAH", "ENO1", "IPO9", "KIF14", "NEK2", "NENF", "NUF2", "PSMD4", "RXRG", "UBE2T"),
-      "2p" = c("CEP68", "MEIS1", "MDH1", "OST4", "PDIA6", "POLE4", "RAB1A", "SNRPG", "SOX11"),
-      "6p" = c("ARID1B", "CASP8AP2", "CLIC1", "CUTA", "DDX39B", "DEK", "DST", "GLO1", "HDAC2", "HDDC2", "HMGA1", "LIN28B", "MCM3", "MNDA", "PRDM1", "SOX4"),
-      "16q" = c("CHD9", "CNGB1", "CYBA", "MT1E", "MT1X", "MT2A")
-    ))
-  ),
-
-  tar_target(
-    cluster_markers,
-    collect_all_markers(mini_done_files, "results/clusters.xlsx")
-  ),
-
-  tar_target(
-    marker_gene_featureplots,
-    plot_putative_marker_across_samples(interesting_genes, large_done_files, plot_type = FeaturePlot, group_by = "clone_opt", cluster_dictionary),
-  ),
-
-  # tar_target(
-  #   marker_gene_vlnplots_by_cluster,
-  #   plot_putative_marker_across_samples(interesting_genes, mini_done_files, VlnPlot, group_by = "abbreviation", cluster_dictionary),
-  # ),
-  #
-  tar_target(
-    marker_gene_vlnplots_by_clone,
-    plot_putative_marker_across_samples(interesting_genes, large_done_files, plot_type = VlnPlot, group_by = "clone_opt", cluster_dictionary),
-  ),
+# tar_target(mini_clone_comparisons, list(
+#   "SRR13884242" = list("2_v_1_1q+_16q-" = c("1b", "16b"), "3_v_2_8p+_11p+" = c("8a", "11a")), # 16q
+#   "SRR13884243" = list("2_v_1_1q+_16q-"= c("1b", "16b"), "3_v_2_8p+_11p+" = c("8a", "11a")), # 16q and 1q
+#   "SRR13884247" = list("2_v_1_6p+" = c("6c"), "3_v_2_1q+" = c("1b"), "4_v_3_20p-" = c("20d")), # 6p; 1q gain only affects GT 4
+#   "SRR13884249" = list("2_v_1_1q+" = c("1b"), "3_v_2_2p+" = c("2a")), #1q; 2p only GT 3
+#   "SRR14800534" = list("2_v_1_16q-" = c("16c"), "3_v_2_1q+" = c("1b")), #1q only GT 3; maybe reconsider
+#   "SRR14800535" = list("2_v_1_16q-" = c("16b")), #1q only GT 3; maybe reconsider
+#   "SRR14800536" = list("2_v_1_1q+" = c("1b"), "3_v_2_11q-" = c("11b"), "4_v_2_15q+, 19q-" = c("19b", "15b")), #16q
+#   "SRR14800540" = list("2_v_1_1q+" = c("1e"), "5_v_1_6p+" = c("6b"), "3_v_2_6q+_13p-_16q-_20q+" = c("6d", "13d", "16b", "16f", "20c"), "4_v_2_3q-" = c("3b")), #16q; just 2
+#   "SRR14800541" = list("2_v_1_1q+_6p+" = c("1f", "6a"), "3_v_2_16q-" = c("16b"), "4_v_2_8p-" = c("8a"), "5_v_4_19p+" = c("19a")), #16q is only in GT 2; 2,3,4,5 have 1q/2p/6p
+#   "SRR14800543" = list("2_v_1_13loh_18+" = c("13b", "18a"), "3_v_2_1q+" = c("1c"), "4_v_3_16q-_17p-" = c("16c", "17a")), #1q/16q only in GT 3
+#   "SRR17960481" = list("2_v_1_1q+, 6p+" = c("1b", "6a", "6b"), "3_v_2_2p+_9q+" = c("2a", "9b")), #1q/2p/6p
+#   "SRR17960484" = list("2_v_1_1q+, 6p+" = c("1e", "6a"), "3_v_2_2p+_10q+" = c("2a", "10b"), "4_v_3_15+" = c("15b"), "5_v_2_16q-" = c("16b"), "6_v_5_17q+" = c("17b"), "7_v_5_5q-" = c("5d"))
+# )
+# ),# 16q only in GT 4; 2,3,4 have 1q; interesting sample)),
+# tar_target(mini_filter_expressions, list(
+#   "SRR13884241" = c(
+#     'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "2a"',
+#     'clone_opt %in% c(1) & p_cnv > 0.25 & seg == "2a"'
+#   ),
+#   "SRR13884242" = c(
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"'
+#   ),
+#   "SRR13884243" = c(
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"'
+#   ),
+#   "SRR13884245" = c(
+#     'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16a"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16a"'
+#   ),
+#   "SRR13884247" = c(
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "6c"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "6c"',
+#     'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"',
+#     'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1b"'
+#   ),
+#   "SRR13884249" = c(
+#     'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
+#     'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "2a"',
+#     'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "2a"'
+#   ),
+#   "SRR14800534" = c(
+#     'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"'
+#   ),
+#   "SRR14800535" = c(
+#     'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"'
+#   ),
+#   "SRR14800536" = c(
+#     'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
+#   ),
+#   "SRR14800537" = c(
+#     'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
+#   ),
+#   "SRR14800539" = c(
+#     'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "2a"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "2a"'
+#   ),
+#   "SRR14800540" = c(
+#     'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "1e"',
+#     'clone_opt %in% c(1,5) & p_cnv > 0.1 & seg == "1e"',
+#     'clone_opt %in% c(1,2,3) & p_cnv > 0.1 & seg == "6b"',
+#     'clone_opt %in% c(4,5) & p_cnv < 0.8 & seg == "6b"'
+#   ),
+#   "SRR14800541" = c(
+#     'clone_opt %in% c(2,3,4,5) & p_cnv < 0.8 & seg == "1f"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1f"',
+#     'clone_opt %in% c(1,2,4,5) & p_cnv > 0.1 & seg == "16b"'
+#   ),
+#   "SRR14800543" = c(
+#     'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1c"',
+#     'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1c"',
+#     'clone_opt %in% c(1,2,3) & p_cnv > 0.1 & seg == "16c"'
+#   ),
+#   "SRR17960481" = c(
+#     'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
+#   ),
+#   "SRR17960484" = c(
+#     'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.8 & seg == "1e"',
+#     'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1e"',
+#     'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "2a"',
+#     'clone_opt %in% c(1,2,5,6,7) & p_cnv > 0.1 & seg == "2a"'
+#     # 'clone_opt %in% c(2,3,4,7) & p_cnv < 0.8 & seg == "6a"',
+#     # 'clone_opt %in% c(1,5,6) & p_cnv > 0.1 & seg == "6a"',
+#     # 'clone_opt %in% c(1,2,3,4) & p_cnv > 0.1 & seg == "16b"',
+#     # 'clone_opt %in% c(5,6,7) & p_cnv < 0.8 & seg == "16b"'
+#   )
+# )),
+# tarchetypes::tar_files(mini_done_files, retrieve_done_files("output/numbat_sridhar_mini/", interesting_samples), format = "file"),
 #
-  tar_target(mini_clusters, collect_clusters_from_seus(large_done_files)),
+# tar_target(
+#   mini_numbat_pdfs,
+#   convert_numbat_pngs(mini_done_files),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   mini_plot_files,
+#   make_numbat_plot_files(mini_done_files, cluster_dictionary),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   mini_dists,
+#   score_filtration(mini_done_files, cluster_dictionary, mini_filter_expressions),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   filtered_mini_plot_files,
+#   make_numbat_plot_files(mini_done_files, cluster_dictionary, mini_filter_expressions, extension = "_filtered"),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   filtered_mini_plot_files,
+#   make_numbat_plot_files("output/numbat_sridhar_mini/SRR14800534/done.txt", cluster_dictionary, mini_filter_expressions),
+# ),
+# tar_target(
+#   mini_heatmaps,
+#   make_numbat_heatmaps(mini_done_files, p_min = 0.5, line_width = 0.1, mini_filter_expressions, extension = "_filtered"),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   mini_gseas,
+#   diffex_groups(mini_done_files, mini_filter_expressions, cluster_comparisons),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(
+#   mini_cluster_gseas,
+#   enrich_by_cluster(mini_done_files),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+# tar_target(mini_in_segment_diffex_clones,
+#            find_diffex_clones(mini_done_files, mini_clone_comparisons, location = "in_segment"),
+#            pattern = map(mini_done_files),
+#            iteration = "list"
+# ),
+#
+# tar_target(
+#   mini_in_segment_diffex_clones_for_each_cluster,
+#   find_diffex_bw_clones_for_each_cluster(mini_done_files, mini_clone_comparisons, cluster_dictionary, location = "in_segment"),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+#
+# tar_target(table_mini_in_segment_diffex_clones,
+#            tabulate_diffex_clones(mini_in_segment_diffex_clones_for_each_cluster,
+#                                   "results/diffex_bw_clones_per_cluster_mini_in_segment.xlsx",
+#                                   "results/diffex_bw_clones_per_cluster_mini_in_segment_by_chr.xlsx",
+#                                   mini_in_segment_diffex_clones,
+#                                   "results/diffex_bw_clones_mini_in_segment.xlsx",
+#                                   "results/diffex_bw_clones_mini_in_segment_by_chr.xlsx"),
+# ),
+# tar_target(mini_out_of_segment_diffex_clones,
+#            find_diffex_clones(mini_done_files, mini_clone_comparisons, location = "out_of_segment"),
+#            pattern = map(mini_done_files),
+#            iteration = "list"
+# ),
+#
+# tar_target(
+#   mini_out_of_segment_diffex_clones_for_each_cluster,
+#   find_diffex_bw_clones_for_each_cluster(mini_done_files, mini_clone_comparisons, cluster_dictionary, location = "out_of_segment"),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+#
+# tar_target(table_mini_out_of_segment_diffex_clones,
+#            tabulate_diffex_clones(mini_out_of_segment_diffex_clones_for_each_cluster,
+#                                   "results/diffex_bw_clones_per_cluster_mini_out_of_segment.xlsx",
+#                                   "results/diffex_bw_clones_per_cluster_mini_out_of_segment_by_chr.xlsx",
+#                                   mini_out_of_segment_diffex_clones,
+#                                   "results/diffex_bw_clones_mini_out_of_segment.xlsx",
+#                                   "results/diffex_bw_clones_mini_out_of_segment_by_chr.xlsx"),
+# ),
+# tar_target(
+#   mini_diffex_bw_clusters_for_each_clone,
+#   find_diffex_bw_clusters_for_each_clone(mini_done_files, cluster_dictionary),
+#   pattern = map(mini_done_files),
+#   iteration = "list"
+# ),
+#
+# tar_target(
+#   collated_mini_heatmaps,
+#   qpdf::pdf_combine(unlist(mini_heatmaps), "results/numbat_sridhar_mini/mini_heatmaps.pdf"),
+# ),
+# tar_target(mini_numbat_expression, retrieve_numbat_plot_type(mini_numbat_pdfs, "exp_roll_clust.pdf")),
+# tar_target(mini_numbat_expression_pdf, qpdf::pdf_combine(mini_numbat_expression, "results/numbat_sridhar_mini/mini_numbat_expression.pdf")),
+# tar_target(mini_numbat_heatmap_files, retrieve_numbat_plot_type(mini_numbat_pdfs, "panel_2.pdf")),
+# tar_target(mini_numbat_heatmap_pdf, qpdf::pdf_combine(mini_numbat_heatmap_files, "results/numbat_sridhar_mini/mini_numbat_heatmaps.pdf")),
+# tar_target(mini_numbat_bulk_clones_final, retrieve_numbat_plot_type(mini_numbat_pdfs, "bulk_clones_final.pdf")),
+# tar_target(mini_numbat_bulk_clones_final_pdf, qpdf::pdf_combine(mini_numbat_bulk_clones_final, "results/numbat_sridhar_mini/mini_bulk_clones_final.pdf")),
+# tar_target(
+#   mini_numbat_sample_pdfs,
+#   reroute_done_to_results_pdf(mini_done_files, "_mini"),
+#   pattern = map(mini_done_files),
+#   iteration = "list",
+#   format = "file"
+# ),
 
-# # large files ------------------------------
+# large files ------------------------------
+
+tar_target(
+  interesting_genes,
+  unlist(list(
+    "1q" = c("ANP32E", "ASH1L", "ASPM", "CENPF", "CKS1B", "CNIH4", "CRABP2", "ENAH", "ENO1", "IPO9", "KIF14", "NEK2", "NENF", "NUF2", "PSMD4", "RXRG", "UBE2T"),
+    "2p" = c("CEP68", "MEIS1", "MDH1", "OST4", "PDIA6", "POLE4", "RAB1A", "SNRPG", "SOX11"),
+    "6p" = c("ARID1B", "CASP8AP2", "CLIC1", "CUTA", "DDX39B", "DEK", "DST", "GLO1", "HDAC2", "HDDC2", "HMGA1", "LIN28B", "MCM3", "MNDA", "PRDM1", "SOX4"),
+    "16q" = c("CHD9", "CNGB1", "CYBA", "MT1E", "MT1X", "MT2A"),
+    "interesting" = c("SETD6", "RBL2", "DDX19A", "EZH2", "RB1")
+  ))
+),
+
+tar_target(
+  marker_gene_featureplots,
+  plot_putative_marker_across_samples(interesting_genes, unlist(filtered_seus), plot_type = FeaturePlot, group_by = "clone_opt", cluster_dictionary),
+),
+
+tar_target(
+  marker_gene_vlnplots_by_clone,
+  plot_putative_marker_across_samples(interesting_genes, unlist(filtered_seus), plot_type = VlnPlot, group_by = "clone_opt", cluster_dictionary),
+),
+
+tar_target(
+  marker_gene_vlnplots_by_cluster,
+  plot_putative_marker_across_samples(interesting_genes, unlist(filtered_seus), plot_type = VlnPlot, group_by = "abbreviation", cluster_dictionary),
+),
+
+tar_target(
+  cluster_markers,
+  collect_all_markers(large_done_files, "results/clusters.xlsx")
+),
+
+
+tar_target(large_clusters, collect_clusters_from_seus(large_done_files)),
 
 tar_target(large_filter_expressions, list(
-  "SRR13884241" = c(
-    'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1) & p_cnv > 0.25 & seg == "2a"'
-  ),
   "SRR13884242" = c(
-    'clone_opt %in% c(2,3,4) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"'
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1c"',
+    'clone_opt %in% c(2,3,4) & p_cnv < 0.7 & seg == "1c"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "16b"',
+    'clone_opt %in% c(2,3,4) & p_cnv < 0.7 & seg == "16b"'
   ),
   "SRR13884243" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "16b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"',
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"'
-  ),
-  "SRR13884245" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16a"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16a"'
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "16b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "16b"',
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1b"'
   ),
   "SRR13884247" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "6c"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "6c"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1b"'
+    'clone_opt %in% c(2,3,4,5,6) & p_cnv < 0.7 & seg == "6c"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "6c"',
+    'clone_opt %in% c(1,2,3,4,5) & p_cnv > 0.3 & seg == "2b"',
+    'clone_opt %in% c(6) & p_cnv < 0.7 & seg == "2b"'
   ),
   "SRR13884249" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "2a"',
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "2a"'
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1b"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "2a"',
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "2a"'
   ),
   "SRR14800534" = c(
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"'
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1b"',
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "16c"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "16c"'
   ),
   "SRR14800535" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "16b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "16b"'
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "16b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "16b"',
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1b"'
   ),
   "SRR14800536" = c(
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR14800537" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
-  ),
-  "SRR14800539" = c(
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "2a"'
+    'clone_opt %in% c(3,4) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1b"',
+    'clone_opt %in% c(2,3,4) & p_cnv < 0.7 & seg == "16b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "16b"'
   ),
   "SRR14800540" = c(
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "1e"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1e"',
-    'clone_opt %in% c(1,3) & p_cnv > 0.1 & seg == "6b"',
-    'clone_opt %in% c(2) & p_cnv < 0.8 & seg == "6b"'
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "1d"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1d"',
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "1e"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1e"',
+    'clone_opt %in% c(1,3) & p_cnv > 0.3 & seg == "6b"',
+    'clone_opt %in% c(2) & p_cnv < 0.7 & seg == "6b"',
+    'clone_opt %in% c(1,3) & p_cnv > 0.3 & seg == "16e"',
+    'clone_opt %in% c(2) & p_cnv < 0.7 & seg == "16e"'
   ),
   "SRR14800541" = c(
-    'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.8 & seg == "1f"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1f"',
-    'clone_opt %in% c(3,4) & p_cnv < 0.8 & seg == "16b"'
+    'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.7 & seg == "1f"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1f"',
+    'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.7 & seg == "2a"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "2a"',
+    'clone_opt %in% c(2,3,4,5,6,7) & p_cnv < 0.7 & seg == "6a"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "6a"',
+    'clone_opt %in% c(3,4) & p_cnv < 0.7 & seg == "16d"',
+    'clone_opt %in% c(1,2,5,6,7) & p_cnv > 0.3 & seg == "16d"'
   ),
   "SRR14800543" = c(
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "1c"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "1c"',
-    'clone_opt %in% c(1,2,4) & p_cnv > 0.1 & seg == "16c"',
-    'clone_opt %in% c(3) & p_cnv < 0.8 & seg == "16c"'
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "1c"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "1c"',
+    'clone_opt %in% c(1,2,4) & p_cnv > 0.3 & seg == "16c"',
+    'clone_opt %in% c(3) & p_cnv < 0.7 & seg == "16c"'
 
   ),
   "SRR17960481" = c(
-    'clone_opt %in% c(2,3) & p_cnv < 0.8 & seg == "1b"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1b"'
+    'clone_opt %in% c(2,3) & p_cnv < 0.7 & seg == "1b"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1b"'
   ),
   "SRR17960484" = c(
-    'clone_opt %in% c(2,3,4,5) & p_cnv < 0.8 & seg == "1c"',
-    'clone_opt %in% c(1) & p_cnv > 0.1 & seg == "1c"',
-    'clone_opt %in% c(4,5) & p_cnv < 0.8 & seg == "2a"',
-    'clone_opt %in% c(1,2,3) & p_cnv > 0.1 & seg == "2a"',
-    'clone_opt %in% c(1,2) & p_cnv > 0.1 & seg == "6a"',
-    'clone_opt %in% c(3,4,5) & p_cnv < 0.8 & seg == "6a"'
-    # 'clone_opt %in% c(1,5,6) & p_cnv > 0.1 & seg == "6a"',
-    # 'clone_opt %in% c(1,2,3,4) & p_cnv > 0.1 & seg == "16b"',
-    # 'clone_opt %in% c(5,6,7) & p_cnv < 0.8 & seg == "16b"'
+    'clone_opt %in% c(2,3,4,5) & p_cnv < 0.7 & seg == "1c"',
+    'clone_opt %in% c(1) & p_cnv > 0.3 & seg == "1c"',
+    'clone_opt %in% c(4,5) & p_cnv < 0.7 & seg == "2a"',
+    'clone_opt %in% c(1,2,3) & p_cnv > 0.3 & seg == "2a"',
+    'clone_opt %in% c(1,2) & p_cnv > 0.3 & seg == "6a"',
+    'clone_opt %in% c(3,4,5) & p_cnv < 0.7 & seg == "6a"'
   )
 )),
 
@@ -546,8 +527,15 @@ tar_target(
 ),
 
 tar_target(
+  filtered_seus,
+  filter_cluster_save_seu(large_done_files, cluster_dictionary, large_filter_expressions, extension = "_filtered"),
+  pattern = map(large_done_files),
+  iteration = "list"
+),
+
+tar_target(
   large_heatmaps,
-  make_numbat_heatmaps(large_done_files, p_min = 0.5, line_width = 0.1, large_filter_expressions, extension = "_filtered"),
+  make_numbat_heatmaps(large_done_files, p_min = 0.5, line_width = 0.1, large_filter_expressions, cluster_dictionary, extension = "_filtered"),
   pattern = map(large_done_files),
   iteration = "list"
 ),
@@ -572,7 +560,7 @@ tar_target(expr_heatmap_pdfs, make_expression_heatmap_comparison(large_numbat_pd
 
   # in segment ------------------------------
   tar_target(large_in_segment_diffex_clones,
-             find_diffex_clones(large_done_files, large_clone_comparisons, location = "in_segment"),
+             find_diffex_clones(large_done_files, large_clone_comparisons, cluster_dictionary, location = "in_segment"),
              pattern = map(large_done_files),
              iteration = "list"
   ),
@@ -618,7 +606,7 @@ tar_target(expr_heatmap_pdfs, make_expression_heatmap_comparison(large_numbat_pd
 
   # out of segment ------------------------------
   tar_target(large_out_of_segment_diffex_clones,
-             find_diffex_clones(large_done_files, large_clone_comparisons, location = "out_of_segment"),
+             find_diffex_clones(large_done_files, large_clone_comparisons, cluster_dictionary, location = "out_of_segment"),
              pattern = map(large_done_files),
              iteration = "list"
   ),
@@ -646,6 +634,27 @@ tar_target(expr_heatmap_pdfs, make_expression_heatmap_comparison(large_numbat_pd
                                     "results/diffex_bw_clones_large_out_of_segment.xlsx",
                                     "results/diffex_bw_clones_large_out_of_segment_by_chr.xlsx"),
   ),
+
+  # # 16q
+  # tar_target(integrated_seu_16q, seu_integrate_rbs(numbat_dir = "output/numbat_sridhar",
+  #                                                  kept_samples = c('SRR14800534', 'SRR14800535', 'SRR14800536'),
+  #                                                  cluster_dictionary)
+  #            ),
+  # tar_target(clone_comparisons_for_16q, list("2_v_1_16q-" = c("16b"), "3_v_2_1q+" = c("1b"))), #1q only GT 3; maybe reconsider
+  #
+  #
+  #
+  # # 16q/1q
+  # tar_target(integrated_seu_1q_16q, seu_integrate_rbs(numbat_dir = "output/numbat_sridhar",
+  #                                                     kept_samples = c('SRR13884242', 'SRR13884243', 'SRR13884249', 'SRR14800534', 'SRR14800535', 'SRR14800536', 'SRR14800543'),
+  #                                                     cluster_dictionary)
+  #            ),
+  #
+  # # 1q 6p
+  # tar_target(integrated_seu_1q_6p, seu_integrate_rbs(numbat_dir = "output/numbat_sridhar",
+  #                                                    kept_samples = c('SRR14800543', 'SRR17960481', 'SRR17960484'),
+  #                                                    cluster_dictionary)
+  #            ),
 
 
   # tar_target(

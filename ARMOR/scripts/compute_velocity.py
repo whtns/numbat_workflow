@@ -41,8 +41,8 @@ adata = scv.utils.merge(adata, ldata)
 # scv.pp.moments(adata)
 
 scv.pp.filter_and_normalize(adata, min_shared_counts=20, n_top_genes=2000)
-scv.pp.moments(adata, method='hnsw')
-# scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
+# scv.pp.moments(adata, method='hnsw')
+scv.pp.moments(adata, n_pcs=30, n_neighbors=30)
 
 scv.tl.umap(adata)
 

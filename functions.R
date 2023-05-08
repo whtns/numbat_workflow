@@ -304,6 +304,14 @@ make_numbat_plot_files <- function(done_file, cluster_dictionary, filter_express
 
   seu <- seu[,!colnames(seu) %in% excluded_cells]
 
+  # asdf
+  clusters_to_remove <-
+    cluster_dictionary[[sample_id]] %>%
+    dplyr::filter(remove == "1") %>%
+    dplyr::pull(`gene_snn_res.0.2`)
+
+  seu <- seu[,!seu$gene_snn_res.0.2 %in% clusters_to_remove]
+
   plot_markers(seu, metavar = "abbreviation", marker_method = "presto", return_plotly = FALSE, hide_technical = "all") +
     ggplot2::scale_y_discrete(position = "left") +
     labs(title = sample_id)
@@ -345,7 +353,71 @@ make_numbat_plot_files <- function(done_file, cluster_dictionary, filter_express
   return(plot_files)
 }
 
-make_numbat_heatmaps <- function(done_file, p_min = 0.9, line_width = 0.1, filter_expressions = NULL, extension = ""){
+filter_cluster_save_seu <- function(done_file, cluster_dictionary, filter_expressions = NULL, extension = ""){
+  browser()
+
+  output_plots <- list()
+
+  sample_id <- path_file(path_dir(done_file))
+
+  numbat_dir = fs::path_split(done_file)[[1]][[2]]
+
+  dir_create(glue("results/{numbat_dir}"))
+  dir_create(glue("results/{numbat_dir}/{sample_id}"))
+
+  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds")) %>%
+    filter_mito_cells()
+
+  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
+
+  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
+
+  nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
+    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
+    tibble::column_to_rownames("cell")
+
+  seu <- Seurat::AddMetaData(seu, nb_meta)
+
+  seu <- seu[,!is.na(seu$clone_opt)]
+
+  test0 <- seu@meta.data["gene_snn_res.0.2"] %>%
+    tibble::rownames_to_column("cell") %>%
+    dplyr::mutate(gene_snn_res.0.2 = as.numeric(gene_snn_res.0.2)) %>%
+    dplyr::left_join(cluster_dictionary[[sample_id]], by = "gene_snn_res.0.2") %>%
+    dplyr::select("cell", "abbreviation") %>%
+    tibble::column_to_rownames("cell")
+
+  seu <- AddMetaData(seu, test0)
+
+  phylo_heatmap_data <- mynb$clone_post %>%
+    dplyr::select(cell, clone_opt) %>%
+    dplyr::left_join(mynb$joint_post, by = "cell")
+
+  # filter out cells
+  excluded_cells <- map(filter_expressions[[sample_id]], pull_cells_matching_expression, phylo_heatmap_data) %>%
+    unlist()
+
+  seu <- seu[,!colnames(seu) %in% excluded_cells]
+
+  # asdf
+  clusters_to_remove <-
+    cluster_dictionary[[sample_id]] %>%
+    dplyr::filter(remove == "1") %>%
+    dplyr::pull(`gene_snn_res.0.2`)
+
+  seu <- seu[,!seu$gene_snn_res.0.2 %in% clusters_to_remove]
+
+  seu <- seuratTools::seurat_cluster(seu, resolution = c(0.2, 0.4))
+
+  filtered_seu_path <- glue("output/seurat/{sample_id}_filtered_seu.rds")
+
+  saveRDS(seu, filtered_seu_path)
+
+  return(filtered_seu_path)
+
+}
+
+make_numbat_heatmaps <- function(done_file, p_min = 0.9, line_width = 0.1, filter_expressions = NULL, cluster_dictionary, extension = ""){
   # browser()
 
   sample_id <- path_file(path_dir(done_file))
@@ -384,6 +456,14 @@ make_numbat_heatmaps <- function(done_file, p_min = 0.9, line_width = 0.1, filte
   }
 
   seu <- seu[,colnames(seu) %in% myannot$cell]
+
+  # asdf
+  clusters_to_remove <-
+    cluster_dictionary[[sample_id]] %>%
+    dplyr::filter(remove == "1") %>%
+    dplyr::pull(`gene_snn_res.0.2`)
+
+  seu <- seu[,!seu$gene_snn_res.0.2 %in% clusters_to_remove]
 
   myannot <-
     seu@meta.data %>%
@@ -599,8 +679,8 @@ diffex_groups_old <- function(sample_id, myseus, celldf, ...){
 }
 
 
-retrieve_numbat_seurat <- function(done_file){
-
+retrieve_numbat_seurat <- function(done_file, cluster_dictionary){
+  # browser()
   sample_id <- path_file(path_dir(done_file))
 
   numbat_dir = fs::path_split(done_file)[[1]][[2]]
@@ -617,6 +697,16 @@ retrieve_numbat_seurat <- function(done_file){
     tibble::column_to_rownames("cell")
 
   seu <- Seurat::AddMetaData(seu, nb_meta)
+
+
+  test0 <- seu@meta.data["gene_snn_res.0.2"] %>%
+    tibble::rownames_to_column("cell") %>%
+    dplyr::mutate(gene_snn_res.0.2 = as.numeric(gene_snn_res.0.2)) %>%
+    dplyr::left_join(cluster_dictionary[[sample_id]], by = "gene_snn_res.0.2") %>%
+    dplyr::select("cell", "abbreviation") %>%
+    tibble::column_to_rownames("cell")
+
+  seu <- AddMetaData(seu, test0)
 
   return(seu)
 
@@ -1131,48 +1221,38 @@ retrieve_current_param <- function(current_params, myparam){
     set_names(sample_ids)
 }
 
-plot_putative_marker_across_samples <- function(mymarkers, done_files, plot_type = FeaturePlot, group_by = "gene_snn_res.0.2", cluster_dictionary){
+plot_putative_marker_across_samples <- function(mymarkers, seu_paths, plot_type = FeaturePlot, group_by = "gene_snn_res.0.2", cluster_dictionary){
   print(mymarkers)
-  plot_markers_in_sample <- function(done_file, mymarkers, plot_type = FeaturePlot, group_by = group_by, cluster_dictionary){
+  plot_markers_in_sample <- function(seu_path, mymarkers, plot_type = FeaturePlot, group_by = group_by, cluster_dictionary){
     # browser()
-    sample_id <- path_file(path_dir(done_file))
+    sample_id <- str_extract(seu_path, "SRR[0-9]*")
 
-    numbat_dir = fs::path_split(done_file)[[1]][[2]]
+    numbat_dir = "numbat_sridhar"
 
     dir_create(glue("results/{numbat_dir}"))
     dir_create(glue("results/{numbat_dir}/{sample_id}"))
 
-    seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds")) %>%
-      filter_mito_cells()
-
-    seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
-
-    mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
-
-    nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
-      dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
-      tibble::column_to_rownames("cell")
-
-    seu <- Seurat::AddMetaData(seu, nb_meta)
-
-    seu <- seu[,!is.na(seu$clone_opt)]
-
-    test0 <- seu@meta.data["gene_snn_res.0.2"] %>%
-      tibble::rownames_to_column("cell") %>%
-      dplyr::mutate(gene_snn_res.0.2 = as.numeric(gene_snn_res.0.2)) %>%
-      dplyr::left_join(cluster_dictionary[[sample_id]], by = "gene_snn_res.0.2") %>%
-      dplyr::select("cell", "abbreviation") %>%
-      tibble::column_to_rownames("cell")
-
-    seu <- AddMetaData(seu, test0)
+    seu <- readRDS(seu_path)
 
     if(identical(plot_type, VlnPlot)){
-      feature_plots <- plot_type(seu, features = mymarkers, group.by = group_by, combine = FALSE, pt.size  = 0.5) %>%
+      feature_plots_first <- plot_type(seu, features = mymarkers, group.by = group_by, combine = FALSE, pt.size  = 0) %>%
         set_names(mymarkers)
 
-      feature_plots <- map(feature_plots, ~{
+      max_ys = map(feature_plots_first, ~layer_scales(.x)$y$get_limits()) %>%
+        map(2) %>%
+        identity()
+
+      feature_plots <- map2(feature_plots_first, max_ys, ~{
         .x +
-        stat_compare_means(method = "anova", label.y= 0.4)
+          # expand_limits(y = c(0, .y*2.5)) +
+          stat_compare_means(comparisons = list(c(1, 2)), method = "t.test", label.y = .y*0.9) +
+          # stat_compare_means() +
+          geom_boxplot(width = 0.2) +
+          theme(legend.position="none",
+                axis.title.x=element_blank(),
+                axis.title.y=element_blank()) +
+        # stat_compare_means(method = "anova", label.y= 0.4) +
+        NULL
       })
 
     } else if(identical(plot_type, FeaturePlot)){
@@ -1187,9 +1267,9 @@ plot_putative_marker_across_samples <- function(mymarkers, done_files, plot_type
 
   }
 
-  sample_ids <- path_file(path_dir(done_files))
+  sample_ids <- str_extract(seu_paths, "SRR[0-9]*")
 
-  myplots <- map(done_files, plot_markers_in_sample, mymarkers = mymarkers, plot_type = plot_type, group_by = group_by, cluster_dictionary) %>%
+  myplots <- map(seu_paths, plot_markers_in_sample, mymarkers = mymarkers, plot_type = plot_type, group_by = group_by, cluster_dictionary) %>%
     set_names(sample_ids)
 
 
@@ -1330,91 +1410,6 @@ find_diffex_bw_clusters_for_each_clone <- function(done_file, cluster_dictionary
 
 }
 
-find_diffex_bw_clusters_for_each_clone_old <- function(done_file, cluster_dictionary, ident.1 = "G2M", ident.2 = "cone"){
-  browser()
-  sample_id <- path_file(path_dir(done_file))
-
-  numbat_dir = fs::path_split(done_file)[[1]][[2]]
-
-  dir_create(glue("results/{numbat_dir}"))
-
-  seu <- readRDS(glue("output/seurat/{sample_id}_seu.rds")) %>%
-    filter_mito_cells()
-
-  seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.", "-"))
-
-  mynb <- readRDS(glue("output/{numbat_dir}/{sample_id}_numbat.rds"))
-
-  nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
-    dplyr::mutate(cell = str_replace(cell, "\\.", "-")) %>%
-    tibble::column_to_rownames("cell")
-
-  seu <- Seurat::AddMetaData(seu, nb_meta)
-
-  seu <- seu[,!is.na(seu$clone_opt)]
-
-  test0 <- seu@meta.data["gene_snn_res.0.2"] %>%
-    tibble::rownames_to_column("cell") %>%
-    dplyr::mutate(gene_snn_res.0.2 = as.numeric(gene_snn_res.0.2)) %>%
-    dplyr::left_join(cluster_dictionary[[sample_id]], by = "gene_snn_res.0.2") %>%
-    dplyr::select("cell", "abbreviation") %>%
-    tibble::column_to_rownames("cell")
-
-  seu <- AddMetaData(seu, test0)
-
-  cluster_diff_per_clone <- function(clone_for_diffex, seu, ident.1, ident.2){
-    browser()
-    seu0 <- seu[,seu$clone_opt == clone_for_diffex]
-
-    Idents(seu0) <- seu0$abbreviation
-
-    diffex <- FindMarkers(seu0, group.by = "abbreviation", ident.1 = ident.1, ident.2 = ident.2) %>%
-      dplyr::mutate(clone = clone_for_diffex)
-
-    gse_plot <- enrichment_analysis(diffex) +
-      labs(title = glue("{clone_for_diffex}"))
-
-    return(list("diffex" = diffex, "gse_plot" = gse_plot))
-
-  }
-
-  myclones <- sort(unique(seu$clone_opt)) %>%
-    set_names(.)
-
-  possible_cluster_diff_per_clone <- possibly(cluster_diff_per_clone)
-
-  diffex <- map(myclones, possible_cluster_diff_per_clone, seu, ident.1 = ident.1, ident.2 = ident.2)
-
-  enrich_plots <- map(diffex, 2)
-
-  diffex <- map(diffex, 1) %>%
-    compact() %>%
-    map(tibble::rownames_to_column, "symbol") %>%
-    dplyr::bind_rows(.id = "cluster") %>%
-    # dplyr::rename(symbol = gene) %>%
-    dplyr::mutate(sample_id = sample_id) %>%
-    dplyr::left_join(annotables::grch38, by = "symbol") %>%
-    dplyr::select(symbol, description, everything()) %>%
-    dplyr::distinct(symbol, cluster, .keep_all = TRUE) %>%
-    dplyr::arrange(cluster, p_val_adj) %>%
-    identity()
-
-
-  enrich_plot_path <- glue("results/{numbat_dir}/{sample_id}_clone_diffex_gsea.pdf")
-
-  pdf(enrich_plot_path, width = 8, height = 10)
-  print(enrich_plots)
-  dev.off()
-
-  diffex_path <- glue("results/{numbat_dir}/{sample_id}_clone_diffex.csv")
-  write_csv(diffex, diffex_path)
-
-  return(list("enrich_plot" = enrich_plot_path, "diffex" = diffex_path))
-
-
-}
-
-
 find_diffex_bw_clones_for_each_cluster <- function(done_file, clone_comparisons, cluster_dictionary, location = "in_segment"){
   browser()
   sample_id <- path_file(path_dir(done_file))
@@ -1462,6 +1457,13 @@ find_diffex_bw_clones_for_each_cluster <- function(done_file, clone_comparisons,
 
   seu <- AddMetaData(seu, test0)
 
+  clusters_to_remove <-
+    cluster_dictionary[[sample_id]] %>%
+    dplyr::filter(remove == "1") %>%
+    dplyr::pull(`gene_snn_res.0.2`)
+
+  seu <- seu[,!seu$gene_snn_res.0.2 %in% clusters_to_remove]
+
   myclusters <- sort(unique(seu$abbreviation)) %>%
     set_names(.)
 
@@ -1475,6 +1477,59 @@ find_diffex_bw_clones_for_each_cluster <- function(done_file, clone_comparisons,
     identity()
 
   diffex_path <- glue("results/{numbat_dir}/{sample_id}_cluster_clone_comparison_diffex_{location}.csv")
+  write_csv(diffex, diffex_path)
+
+  return(diffex_path)
+
+
+}
+
+find_diffex_bw_clones_for_each_cluster_integrated <- function(seu_path, kept_samples = c('SRR14800534', 'SRR14800535', 'SRR14800536'), clone_comparisons = list("2_v_1_16q-" = c("16c", "16b"), "3_v_2_1q+" = c("1b")), location = "in_segment"){
+  # browser()
+
+  seu <- readRDS(seu_path)
+
+  numbat_dir = "numbat_sridhar"
+
+  mynbs <- glue("output/{numbat_dir}/{kept_samples}_numbat.rds") %>%
+    map(readRDS)
+
+  location  = "in_segment"
+
+  # asdf
+
+  seu <- seu[,!is.na(seu$clone_opt)]
+
+  clone_diff_per_cluster <- function(cluster_for_diffex, seu){
+    # browser()
+    seu0 <- seu[,seu$gene_snn_res.0.2 == cluster_for_diffex]
+
+    Idents(seu0) <- seu0$clone_opt
+
+    # diffex <- FindAllMarkers(seu0) %>%
+    #   dplyr::rename(clone_opt = cluster)
+
+    diffex <- imap(clone_comparisons, make_clone_comparison_integrated, seu0, mynbs, location = location)
+
+    return(diffex)
+
+  }
+
+  myclusters <- sort(unique(seu$gene_snn_res.0.2)) %>%
+    set_names(.)
+
+  possible_clone_diff_per_cluster <- possibly(clone_diff_per_cluster)
+
+  diffex <- map(myclusters, possible_clone_diff_per_cluster, seu) %>%
+    compact() %>%
+    map(bind_rows, .id = "clone_comparison") %>%
+    bind_rows(.id = "cluster") %>%
+    # dplyr::arrange(cluster, p_val_adj) %>%
+    identity()
+
+  kept_samples_slug = paste(kept_samples, collapse = "_")
+
+  diffex_path <- glue("results/{numbat_dir}/{kept_samples_slug}_cluster_clone_comparison_diffex_{location}.csv")
   write_csv(diffex, diffex_path)
 
   return(diffex_path)
@@ -1981,8 +2036,19 @@ plot_gene_clone_trend <- function(seu, mygenes = c('CRABP2', 'MEG3')){
 }
 
 
-find_diffex_clones <- function(done_file, clone_comparisons, location = "in_segment"){
-  # browser()
+#' Title
+#'
+#' @param done_file
+#' @param clone_comparisons
+#' @param cluster_dictionary annotated louvain clusters
+#' @param location in_segment or out_of_segment
+#'
+#' @return
+#' @export
+#'
+#' @examples
+find_diffex_clones <- function(done_file, clone_comparisons, cluster_dictionary, location = "in_segment"){
+  browser()
   sample_id <- path_file(path_dir(done_file))
 
   numbat_dir = fs::path_split(done_file)[[1]][[2]]
@@ -2004,7 +2070,32 @@ find_diffex_clones <- function(done_file, clone_comparisons, location = "in_segm
 
   seu <- seu[,!is.na(seu$clone_opt)]
 
+  clusters_to_remove <-
+    cluster_dictionary[[sample_id]] %>%
+    dplyr::filter(remove == "1") %>%
+    dplyr::pull(`gene_snn_res.0.2`)
+
+  seu <- seu[,!seu$gene_snn_res.0.2 %in% clusters_to_remove]
+
   diffex <- imap(clone_comparisons[[sample_id]], make_clone_comparison, seu, mynb, location = location)
+
+  return(diffex)
+
+}
+
+find_diffex_clones_integrated <- function(seu_path, kept_samples, clone_comparisons, location = "in_segment"){
+  # browser()
+
+  seu <- readRDS(seu_path)
+
+  seu <- seu[,!is.na(seu$clone_opt)]
+
+  mynbs <- glue("output/numbat_sridhar/{kept_samples}_numbat.rds") %>%
+    map(readRDS)
+
+
+  diffex <- imap(clone_comparisons, make_clone_comparison_integrated, seu, mynbs, location = location)
+
 
   return(diffex)
 
@@ -2107,7 +2198,7 @@ make_volcano_diffex_clones <- function(cluster_diffex_clones,
                                    total_diffex_clones,
                                    total_pdf = "results/straight_diffex_bw_clones_large.pdf"
                                    ){
-  browser()
+  # browser()
 
   kooi_candidates <- read_csv("data/kooi_candidates.csv")
 
@@ -2171,14 +2262,17 @@ make_volcano_diffex_clones <- function(cluster_diffex_clones,
       identity()
 
     make_volcano <- function(myres){
-      browser()
+      # browser()
       myres <-
         myres %>%
         dplyr::mutate(chr = case_when(chr == "X" ~ "23",
                                       chr == "Y" ~ "24",
                                       TRUE ~ as.character(chr))) %>%
         dplyr::mutate(chr = str_pad(chr, side = "left", pad = "0", width = 2)) %>%
-        dplyr::mutate(clone_comparison = str_replace_all(clone_comparison, "_", " "))
+        dplyr::mutate(clone_comparison = str_replace_all(clone_comparison, "_", " ")) %>%
+        tibble::rownames_to_column("symbol") %>%
+        dplyr::mutate(rownames = symbol) %>%
+        tibble::column_to_rownames("rownames")
 
       mytitle = sample_id
       mysubtitle = glue("{unique(myres$clone_comparison)} {unique(myres$cluster)}")
@@ -2196,15 +2290,36 @@ make_volcano_diffex_clones <- function(cluster_diffex_clones,
 
       FCcutoff = summary(abs(myres$avg_log2FC))[[5]]
 
-      EnhancedVolcano(myres,
+      selected_genes <-
+        myres %>%
+        dplyr::filter(abs(avg_log2FC) > 0.05, p_val_adj < 0.1) %>%
+        dplyr::pull(symbol)
+
+
+      myplot <- EnhancedVolcano(myres,
                       lab = rownames(myres),
+                      selectLab = selected_genes,
+                      labSize = 2,
                       x = 'avg_log2FC',
                       y = 'p_val_adj',
                       FCcutoff = FCcutoff,
-                      colCustom = custom_cols) +
+                      colCustom = custom_cols,
+                      max.overlaps = 25,
+                      drawConnectors = TRUE) +
         aes(color = chr) +
         # facet_wrap(~chr) +
         labs(title = mytitle, subtitle = mysubtitle)
+
+      # out_html = str_replace_all(glue("{sample_id}_{mytitle}_{mysubtitle}.html"), " ", "_")
+      #
+      # myplotly <- ggplotly(myplot + aes(x= avg_log2FC, y= -log10(p_val_adj), symbol = symbol), tooltip = "symbol")
+      #
+      # # withr::with_dir("results", saveWidget(myplotly, file.path(normalizePath(out_html)), selfcontained = F))
+      #
+      # saveWidget(myplotly, out_html, selfcontained = F)
+
+
+      return(myplot)
     }
 
     test0 <- map(myres, make_volcano)
@@ -2238,7 +2353,10 @@ make_volcano_diffex_clones <- function(cluster_diffex_clones,
                                       chr == "Y" ~ "24",
                                       TRUE ~ as.character(chr))) %>%
         dplyr::mutate(chr = str_pad(chr, side = "left", pad = "0", width = 2)) %>%
-        dplyr::mutate(clone_comparison = str_replace_all(clone_comparison, "_", " "))
+        dplyr::mutate(clone_comparison = str_replace_all(clone_comparison, "_", " ")) %>%
+        tibble::rownames_to_column("symbol") %>%
+        dplyr::mutate(rownames = symbol) %>%
+        tibble::column_to_rownames("rownames")
 
       mytitle = sample_id
       mysubtitle = glue("{unique(myres$clone_comparison)}")
@@ -2256,13 +2374,29 @@ make_volcano_diffex_clones <- function(cluster_diffex_clones,
 
       FCcutoff = summary(abs(myres$avg_log2FC))[[5]]
 
-      EnhancedVolcano(myres,
-                      lab = rownames(myres),
-                      x = 'avg_log2FC',
-                      y = 'p_val_adj',
-                      FCcutoff = FCcutoff,
-                      colCustom = custom_cols) +
+      selected_genes <-
+        myres %>%
+        dplyr::filter(abs(avg_log2FC) > 0.05, p_val_adj < 0.1) %>%
+        dplyr::pull(symbol)
+
+      myplot <- EnhancedVolcano(myres,
+                                lab = rownames(myres),
+                                selectLab = selected_genes,
+                                labSize = 2,
+                                x = 'avg_log2FC',
+                                y = 'p_val_adj',
+                                FCcutoff = FCcutoff,
+                                colCustom = custom_cols,
+                                max.overlaps = 25,
+                                drawConnectors = TRUE) +
+        aes(color = chr) +
+        # facet_wrap(~chr) +
         labs(title = mytitle, subtitle = mysubtitle)
+
+      return(myplot)
+
+
+
     }
 
     test0 <- map(myres, make_volcano)
@@ -2323,7 +2457,7 @@ make_clone_comparison <- function(mysegs, comparison, seu, mynb, location = "in_
       as_tibble() %>%
       dplyr::mutate(log2_sign = dplyr::case_when(cnv_state_map == "amp" ~ -1,
                                                  cnv_state_map == "del" ~ 1)) %>%
-      dplyr::filter(sign(log2_sign) == sign(avg_log2FC)) %>%
+      # dplyr::filter(sign(log2_sign) == sign(avg_log2FC)) %>%
       dplyr::select(-c("CHROM", "seg_start",
                        "seg_end", "cnv_state_map", "log2_sign")) %>%
       dplyr::filter(!str_detect(chr, "CHR_")) %>%
@@ -2350,5 +2484,127 @@ make_clone_comparison <- function(mysegs, comparison, seu, mynb, location = "in_
       dplyr::distinct(symbol, .keep_all = TRUE)
 
   }
+
+}
+
+make_clone_comparison_integrated <- function(mysegs, comparison, seu, mynbs, location = "in_segment"){
+  # browser()
+
+  idents <-
+    comparison %>%
+    str_extract("[0-9]_v_[0-9]") %>%
+    str_split(pattern = "_v_") %>%
+    unlist()
+
+  pull_segment_from_nb <- function(mynb, idents){
+    segments <- mynb$clone_post %>%
+      dplyr::left_join(mynb$joint_post, by = "cell") %>%
+      dplyr::filter(clone_opt %in% idents) %>%
+      dplyr::filter(seg %in% mysegs) %>%
+      dplyr::distinct(CHROM, seg, seg_start, seg_end, cnv_state_map) %>%
+      dplyr::mutate(seqnames = CHROM, start = seg_start, end = seg_end) %>%
+      dplyr::filter(!cnv_state_map == "neu") %>%
+      plyranges::as_granges() %>%
+      identity()
+
+  }
+
+  segments <- map(mynbs, pull_segment_from_nb, idents)
+
+  segments <- unlist(as(segments, "GRangesList"))
+
+  if(location=="in_segment"){
+    diffex <- FindMarkers(seu, ident.1 = idents[[1]], ident.2 = idents[[2]], group.by = "clone_opt",  logfc.threshold = 0.1) %>%
+      tibble::rownames_to_column("symbol") %>%
+      dplyr::left_join(annotables::grch38, by = "symbol") %>%
+      dplyr::distinct(ensgene, .keep_all = TRUE) %>%
+      dplyr::mutate(seqnames = chr) %>%
+      dplyr::filter(!is.na(start), !is.na(end)) %>%
+      plyranges::as_granges() %>%
+      plyranges::join_overlap_intersect(segments) %>%
+      as_tibble() %>%
+      dplyr::mutate(log2_sign = dplyr::case_when(cnv_state_map == "amp" ~ -1,
+                                                 cnv_state_map == "del" ~ 1)) %>%
+      # dplyr::filter(sign(log2_sign) == sign(avg_log2FC)) %>%
+      dplyr::select(-c("CHROM", "seg_start",
+                       "seg_end", "cnv_state_map", "log2_sign")) %>%
+      dplyr::filter(!str_detect(chr, "CHR_")) %>%
+      dplyr::distinct(symbol, .keep_all = TRUE)
+
+  } else if(location=="out_of_segment"){
+    diffex <- FindMarkers(seu, ident.1 = idents[[1]], ident.2 = idents[[2]], group.by = "clone_opt", logfc.threshold = 0.1) %>%
+      tibble::rownames_to_column("symbol") %>%
+      dplyr::left_join(annotables::grch38, by = "symbol") %>%
+      dplyr::distinct(ensgene, .keep_all = TRUE) %>%
+      dplyr::mutate(seqnames = chr) %>%
+      dplyr::filter(!is.na(start), !is.na(end)) %>%
+      plyranges::as_granges()
+
+    out_of_segment_ranges <-
+      diffex %>%
+      plyranges::setdiff_ranges(segments)
+
+    diffex <-
+      diffex %>%
+      plyranges::join_overlap_intersect(out_of_segment_ranges) %>%
+      as_tibble() %>%
+      dplyr::filter(!str_detect(chr, "CHR_")) %>%
+      dplyr::distinct(symbol, .keep_all = TRUE)
+
+  }
+
+}
+
+
+convert_volcano_to_plotly <- function(myplot, out_html){
+  browser()
+
+  myplotly <- ggplotly(myplot + aes(x= avg_log2FC, y= -log10(p_val_adj), symbol = symbol), tooltip = "symbol")
+
+  saveWidget(myplotly, out_html, selfcontained = T, libdir = "lib")
+
+}
+
+
+
+tabulate_clone_comparisons <- function(large_clone_comparisons){
+
+  clone_comparison_table <-
+    large_clone_comparisons %>%
+    map(~{.x %>%
+        tibble::enframe("comparison", "segment") %>%
+        tidyr::unnest(segment)
+        }) %>%
+    dplyr::bind_rows(.id = "sample_id") %>%
+    identity()
+
+  return(clone_comparison_table)
+}
+
+remove_non_tumor_cells <- function(seu){
+  # identify retinal cell type clusters
+  # identify cells with no SCNAs
+
+  # filter out cells that are
+  # 1) not cones or RB cells
+  # 2) have no SCNAs
+
+}
+
+seu_integrate_rbs <- function(numbat_dir = "output/numbat_sridhar", kept_samples = c('SRR14800534', 'SRR14800535', 'SRR14800536'), cluster_dictionary = cluster_dictionary){
+
+  done_files <- retrieve_done_files(numbat_dir, kept_samples)
+
+  seus <- map(done_files, retrieve_numbat_seurat, cluster_dictionary)
+
+  integrated_seu <- seuratTools::seurat_integration_pipeline(seus, resolution = c(0.2, 0.4))
+
+  sample_slug = paste(kept_samples, collapse = "_")
+
+  seu_path = glue("output/seurat/{sample_slug}_seu.rds")
+
+  saveRDS(integrated_seu, seu_path)
+
+  return(seu_path)
 
 }

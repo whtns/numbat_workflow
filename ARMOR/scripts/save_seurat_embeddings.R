@@ -14,6 +14,8 @@ embeddings_path = str_replace(seu_path, "_seu.rds", "_embeddings.csv")
 
 seu <- readRDS(seu_path)
 
+seu <- Seurat::RenameCells(seu, new.names = str_replace(colnames(seu), "\\.1", "-1"))
+
 mynb <- readRDS(nb_path)
 
 nb_meta <- mynb[["clone_post"]][,c("cell", "clone_opt", "GT_opt")] %>%
@@ -26,7 +28,7 @@ umap_embeddings <- seu@reductions$umap@cell.embeddings %>%
   as.data.frame() %>%
   tibble::rownames_to_column("cell")
 
-seurat_meta <- seu@meta.data[c("gene_snn_res.0.2", "clone_opt")] %>%
+seurat_meta <- seu@meta.data[c("gene_snn_res.0.2", "clone_opt", "GT_opt")] %>%
   tibble::rownames_to_column("cell") %>% 
   dplyr::rename(seurat_cluster = `gene_snn_res.0.2`) %>% 
   dplyr::filter(!is.na(clone_opt))

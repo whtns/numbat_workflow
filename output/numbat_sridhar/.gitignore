@@ -1,22 +1,2 @@
-benchmarks/*
-cellranger/*
-infercnv/*
-logs/*
-scanpy/*
-seurat/*
-numbat_sridhar_cone/*
-numbat/*.rds
-numbat/*.tsv.gz
-numbat/*/*.tsv.gz
-numbat/*/*.rds
-numbat/*/phasing
-numbat/*/pileup
-numbat_sridhar/*.rds
-numbat_sridhar/*.tsv.gz
-numbat_sridhar/*/*.tsv.gz
-numbat_sridhar/*/*.tsv
-numbat_sridhar/*/*.rds
-numbat_sridhar/*/phasing
-numbat_sridhar/*/pileup
 
 

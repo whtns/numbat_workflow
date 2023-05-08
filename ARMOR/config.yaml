@@ -138,14 +138,14 @@ te_index: /dataVolume/storage/Homo_sapiens/grch38/hdg38.exclusive.idx
 gmap: /usr/local/bin/TOOLS/Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
 snpvcf: /dataVolume/storage/Homo_sapiens/numbat/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.vcf.gz
 paneldir: /dataVolume/storage/Homo_sapiens/numbat/1000G_hg38
-max_entropy: 0.5
+max_entropy: 0.8
 min_LLR: 2
 max_iter: 2
 read_prop: 1
 tau: 0.3
 numbat_t: 1e-5
 cell_ceiling: 1e4
-gamma: 30
+gamma: 50
 wu_ref_path: /dataVolume/storage/Homo_sapiens/numbat/wu_ref.rds
 yang_ref_path: /dataVolume/storage/Homo_sapiens/numbat/yang_ref.rds
 field_ref_path: /dataVolume/storage/Homo_sapiens/numbat/field_ref.rds
